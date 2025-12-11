@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DIC Analyzer - Working Version</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+        }
+        .content {
+            padding: 30px;
+        }
+        .section {
+            margin-bottom: 30px;
+            border: 1px solid #e1e8ed;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        .section h2 {
+            color: #2c3e50;
+            margin-top: 0;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="text"], input[type="number"], input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .file-input {
+            padding: 5px;
+        }
+        button {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #219a52;
+        }
+        button:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+        }
+        .loading {
+            background: #f39c12 !important;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .analysis-list {
+            margin-top: 20px;
+        }
+        .analysis-item {
+            border: 1px solid #e1e8ed;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 10px;
+            background: #f8f9fa;
+        }
+        .analysis-item h3 {
+            margin: 0 0 10px 0;
+            color: #2c3e50;
+        }
+        .analysis-item p {
+            margin: 5px 0;
+            color: #666;
+        }
+        .status-completed { color: #27ae60; font-weight: bold; }
+        .status-processing { color: #f39c12; font-weight: bold; }
+        .status-error { color: #e74c3c; font-weight: bold; }
+        .status-pending { color: #95a5a6; font-weight: bold; }
+        .download-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        .download-btn:hover {
+            background: #2980b9;
+        }
+        .cancel-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        .cancel-btn:hover {
+            background: #c0392b;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 DIC Analyzer</h1>
+            <p>Digital Image Correlation Analysis Tool</p>
+        </div>
+
+        <div class="content">
+            <!-- User Authentication Section -->
+            <div class="section">
+                <h2>👤 User Authentication</h2>
+                <div id="authSection">
+                    <div id="loginForm" style="display: block;">
+                        <h3>Login</h3>
+                        <input type="text" id="loginUsername" placeholder="Username" required><br><br>
+                        <input type="password" id="loginPassword" placeholder="Password" required><br><br>
+                        <button onclick="loginUser()">Login</button>
+                        <button onclick="showRegister()">Register</button>
+                    </div>
+
+                    <div id="registerForm" style="display: none;">
+                        <h3>Register</h3>
+                        <input type="text" id="registerUsername" placeholder="Username" required><br><br>
+                        <input type="password" id="registerPassword" placeholder="Password" required><br><br>
+                        <button onclick="registerUser()">Register</button>
+                        <button onclick="showLogin()">Back to Login</button>
+                    </div>
+
+                    <div id="userInfo" style="display: none;">
+                        <h3>Welcome, <span id="username"></span>!</h3>
+                        <button onclick="logoutUser()">Logout</button>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>📊 Create New Analysis</h2>
+                <form id="analysisForm">
+                    <div class="form-group">
+                        <label for="name">Analysis Name:</label>
+                        <input type="text" id="name" value="DIC Analysis" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="image_before">Before Image (Reference):</label>
+                        <input type="file" id="image_before" accept="image/*" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="image_after">After Image (Deformed):</label>
+                        <input type="file" id="image_after" accept="image/*" required>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                        <div class="form-group">
+                            <label for="subset_size">Subset Size:</label>
+                            <input type="number" id="subset_size" value="25" min="21" max="31">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="step">Step Size:</label>
+                            <input type="number" id="step" value="12" min="1">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="max_iter">Max Iterations:</label>
+                            <input type="number" id="max_iter" value="35" min="1">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="min_correlation">Min Correlation:</label>
+                            <input type="number" id="min_correlation" value="0.4" step="0.01" min="0" max="1">
+                        </div>
+                    </div>
+
+                    <button type="button" onclick="createAnalysis()">🚀 Start Analysis</button>
+                </form>
+            </div>
+
+            <div class="section">
+                <h2>📋 Completed Analyses</h2>
+                <button onclick="loadAnalyses()">🔄 Refresh List</button>
+                <div id="analysesList" class="analysis-list">
+                    <p>Loading completed analyses...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let csrfToken = '';
+
+        // Initialize the app
+        async function init() {
+            try {
+                document.getElementById('analysesList').innerHTML = '<p>Getting CSRF token...</p>';
+                const response = await fetch('http://localhost:8000/api/get-csrf-token/');
+                const data = await response.json();
+                csrfToken = data.csrfToken;
+                console.log('CSRF Token obtained:', csrfToken.substring(0, 20) + '...');
+                addResult('CSRF token obtained successfully', 'success');
+                await loadAnalyses();
+            } catch (error) {
+                console.error('Init error:', error);
+                addResult('Failed to initialize: ' + error.message, 'error');
+                document.getElementById('analysesList').innerHTML = '<p>Failed to load analyses</p>';
+            }
+        }
+
+        function addResult(message, type = 'info') {
+            const resultsDiv = document.querySelector('.content');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `result ${type}`;
+            resultDiv.textContent = message;
+            resultDiv.style.position = 'fixed';
+            resultDiv.style.top = '20px';
+            resultDiv.style.right = '20px';
+            resultDiv.style.maxWidth = '400px';
+            resultDiv.style.zIndex = '1000';
+
+            resultsDiv.appendChild(resultDiv);
+
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                resultDiv.remove();
+            }, 5000);
+        }
+
+        async function createAnalysis() {
+            if (!csrfToken) {
+                addResult('No CSRF token available', 'error');
+                return;
+            }
+
+            const button = document.querySelector('button[onclick="createAnalysis()"]');
+            const originalText = button.textContent;
+
+            const imageBefore = document.getElementById('image_before').files[0];
+            const imageAfter = document.getElementById('image_after').files[0];
+
+            if (!imageBefore || !imageAfter) {
+                addResult('Please select both images', 'error');
+                return;
+            }
+
+            if (imageBefore.name === imageAfter.name) {
+                addResult('Please select different images for before and after', 'error');
+                return;
+            }
+
+            button.textContent = '⏳ Processing...';
+            button.disabled = true;
+            button.classList.add('loading');
+
+            const formData = new FormData();
+
+            // Add text fields
+            formData.append('name', document.getElementById('name').value);
+            formData.append('subset_size', document.getElementById('subset_size').value);
+            formData.append('step', document.getElementById('step').value);
+            formData.append('max_iter', document.getElementById('max_iter').value);
+            formData.append('min_correlation', document.getElementById('min_correlation').value);
+
+            // Add CSRF token
+            formData.append('csrfmiddlewaretoken', csrfToken);
+
+            // Add files
+            formData.append('image_before', imageBefore);
+            formData.append('image_after', imageAfter);
+
+            console.log('Creating analysis...');
+
+            try {
+                const response = await fetch('http://localhost:8000/api/analyses/', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                console.log('Response status:', response.status);
+
+                if (response.status === 201) {
+                    const data = await response.json();
+                    addResult(`✅ Analysis created successfully! ID: ${data.id}`, 'success');
+                    console.log('Analysis created:', data);
+
+                    // Reset form
+                    document.getElementById('analysisForm').reset();
+                    document.getElementById('name').value = 'DIC Analysis';
+
+                    // Reload analyses list
+                    await loadAnalyses();
+
+                } else {
+                    const errorText = await response.text();
+                    console.error('Error response:', errorText);
+                    addResult(`❌ Error: ${errorText}`, 'error');
+                }
+
+            } catch (error) {
+                console.error('Request error:', error);
+                addResult('❌ Network error: ' + error.message, 'error');
+            } finally {
+                button.textContent = originalText;
+                button.disabled = false;
+                button.classList.remove('loading');
+            }
+        }
+
+        async function loadAnalyses() {
+            try {
+                document.getElementById('analysesList').innerHTML = '<p>Loading completed analyses...</p>';
+
+                // Загружаем все анализы без ограничения по количеству
+                const response = await fetch('http://localhost:8000/api/analyses/?page_size=1000');
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Фильтруем только завершенные анализы
+                    const completedAnalyses = (data.results || []).filter(analysis =>
+                        analysis.status === 'completed' || analysis.status_display === 'Завершено'
+                    );
+                    console.log(`Found ${completedAnalyses.length} completed analyses out of ${data.results.length} total`);
+                    displayAnalyses(completedAnalyses);
+                } else {
+                    document.getElementById('analysesList').innerHTML = '<p>Failed to load analyses</p>';
+                }
+
+            } catch (error) {
+                console.error('Load analyses error:', error);
+                document.getElementById('analysesList').innerHTML = '<p>Error loading analyses</p>';
+            }
+        }
+
+        async function cancelAnalysis(analysisId) {
+            if (!confirm('Are you sure you want to cancel this analysis?')) {
+                return;
+            }
+
+            try {
+                addResult('Cancelling analysis...', 'info');
+
+                const response = await fetch(`http://localhost:8000/api/analyses/${analysisId}/cancel/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    addResult('Analysis cancelled successfully!', 'success');
+                    // Обновляем список анализов
+                    await loadAnalyses();
+                } else {
+                    const errorText = await response.text();
+                    addResult(`Cancel failed: ${errorText}`, 'error');
+                }
+
+            } catch (error) {
+                console.error('Cancel error:', error);
+                addResult('Cancel error: ' + error.message, 'error');
+            }
+        }
+
+
+        function downloadAnalysis(analysisId, status) {
+            // Принимаем как английский, так и русский статус завершения
+            if (status !== 'completed' && status !== 'Завершено') {
+                addResult('Cannot download: Analysis is not completed yet', 'error');
+                return;
+            }
+
+            try {
+                addResult('Starting download...', 'info');
+
+                // Создаем ссылку для скачивания и кликаем по ней
+                // Это работает как обычное скачивание в браузере
+                const a = document.createElement('a');
+                a.href = `http://localhost:8000/api/analyses/${analysisId}/download/`;
+                a.download = `dic_results_${analysisId}.zip`;
+                a.style.display = 'none';
+
+                // Добавляем на страницу и кликаем
+                document.body.appendChild(a);
+                a.click();
+
+                // Очищаем
+                document.body.removeChild(a);
+
+                addResult('Download started! Check your downloads folder.', 'success');
+            } catch (error) {
+                console.error('Download error:', error);
+                addResult('Download error: ' + error.message, 'error');
+            }
+        }
+
+        function displayAnalyses(analyses) {
+            if (analyses.length === 0) {
+                document.getElementById('analysesList').innerHTML = '<p>No completed analyses found</p>';
+                return;
+            }
+
+            const summaryHtml = `<p style="margin-bottom: 15px; color: #666;"><strong>Total completed analyses: ${analyses.length}</strong></p>`;
+
+            const analysesHtml = analyses.map(analysis => {
+                return `
+                <div class="analysis-item">
+                    <h3>${analysis.name}</h3>
+                    <p><strong>ID:</strong> ${analysis.id}</p>
+                    <p><strong>Status:</strong> <span class="status-completed">${analysis.status_display}</span></p>
+                    <p><strong>Created:</strong> ${new Date(analysis.created_at).toLocaleString()}</p>
+                    ${analysis.processing_time ? `<p><strong>Processing Time:</strong> ${analysis.processing_time.toFixed(2)}s</p>` : ''}
+                    ${analysis.max_displacement ? `<p><strong>Max Displacement:</strong> ${analysis.max_displacement.toFixed(4)}</p>` : ''}
+                    <button class="download-btn" onclick="downloadAnalysis('${analysis.id}', 'completed')">📥 Download Results</button>
+                </div>
+            `}).join('');
+
+            document.getElementById('analysesList').innerHTML = summaryHtml + analysesHtml;
+        }
+
+        // Authentication functions
+        function showRegister() {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('registerForm').style.display = 'block';
+        }
+
+        function showLogin() {
+            document.getElementById('registerForm').style.display = 'none';
+            document.getElementById('loginForm').style.display = 'block';
+        }
+
+        async function registerUser() {
+            const username = document.getElementById('registerUsername').value;
+            const password = document.getElementById('registerPassword').value;
+
+            if (!username || !password) {
+                addResult('Please fill in all fields', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:8000/api/auth/register/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    addResult('Registration successful!', 'success');
+                    document.getElementById('username').textContent = data.user.username;
+                    showUserInfo();
+                } else {
+                    addResult(data.error || 'Registration failed', 'error');
+                }
+            } catch (error) {
+                addResult('Network error: ' + error.message, 'error');
+            }
+        }
+
+        async function loginUser() {
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+
+            if (!username || !password) {
+                addResult('Please fill in all fields', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:8000/api/auth/login/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    addResult('Login successful!', 'success');
+                    document.getElementById('username').textContent = data.user.username;
+                    showUserInfo();
+                } else {
+                    addResult(data.error || 'Login failed', 'error');
+                }
+            } catch (error) {
+                addResult('Network error: ' + error.message, 'error');
+            }
+        }
+
+        async function logoutUser() {
+            try {
+                const response = await fetch('http://localhost:8000/api/auth/logout/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                if (response.ok) {
+                    addResult('Logged out successfully', 'success');
+                    showLoginForm();
+                } else {
+                    addResult('Logout failed', 'error');
+                }
+            } catch (error) {
+                addResult('Network error: ' + error.message, 'error');
+            }
+        }
+
+        function showUserInfo() {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('registerForm').style.display = 'none';
+            document.getElementById('userInfo').style.display = 'block';
+        }
+
+        function showLoginForm() {
+            document.getElementById('userInfo').style.display = 'none';
+            document.getElementById('registerForm').style.display = 'none';
+            document.getElementById('loginForm').style.display = 'block';
+        }
+
+        // Initialize when page loads
+        window.onload = init;
+    </script>
+</body>
+</html>
