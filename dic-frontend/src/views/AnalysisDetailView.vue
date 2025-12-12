@@ -37,8 +37,20 @@
               @click="downloadResults"
               prepend-icon="mdi-download"
               :loading="downloading"
+              class="me-2"
             >
               Download Results
+            </v-btn>
+
+            <v-btn
+              v-if="analysis.status === 'completed'"
+              color="success"
+              variant="outlined"
+              @click="downloadPDFReport"
+              prepend-icon="mdi-file-pdf-box"
+              :loading="downloadingPDF"
+            >
+              Download PDF Report
             </v-btn>
 
             <v-btn
@@ -130,6 +142,38 @@
                 {{ analysis.reliable_points_percentage ? `${analysis.reliable_points_percentage}%` : '-' }}
               </div>
               <div class="text-caption text-grey-darken-1">Reliable Points</div>
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
+
+      <!-- Sample Information -->
+      <v-row class="mb-6" v-if="analysis.sample_name || analysis.material || analysis.manufacturer || analysis.test_date">
+        <v-col cols="12">
+          <v-card>
+            <v-card-title>
+              <v-icon left>mdi-flask-outline</v-icon>
+              Sample Information
+            </v-card-title>
+            <v-card-text>
+              <v-row>
+                <v-col cols="12" md="3" v-if="analysis.sample_name">
+                  <div class="text-caption text-grey-darken-1">Sample Name</div>
+                  <div class="text-body-1">{{ analysis.sample_name }}</div>
+                </v-col>
+                <v-col cols="12" md="3" v-if="analysis.material">
+                  <div class="text-caption text-grey-darken-1">Material</div>
+                  <div class="text-body-1">{{ analysis.material }}</div>
+                </v-col>
+                <v-col cols="12" md="3" v-if="analysis.manufacturer">
+                  <div class="text-caption text-grey-darken-1">Manufacturer</div>
+                  <div class="text-body-1">{{ analysis.manufacturer }}</div>
+                </v-col>
+                <v-col cols="12" md="3" v-if="analysis.test_date">
+                  <div class="text-caption text-grey-darken-1">Test Date</div>
+                  <div class="text-body-1">{{ formatDate(analysis.test_date) }}</div>
+                </v-col>
+              </v-row>
             </v-card-text>
           </v-card>
         </v-col>
@@ -368,6 +412,7 @@ const analysis = ref<DICAnalysis | null>(null)
 const loading = ref(false)
 const error = ref<string | null>(null)
 const downloading = ref(false)
+const downloadingPDF = ref(false)
 
 // Methods
 const getStatusColor = (status: string) => {
@@ -426,6 +471,19 @@ const downloadResults = async () => {
     console.error('Failed to download results:', error)
   } finally {
     downloading.value = false
+  }
+}
+
+const downloadPDFReport = async () => {
+  if (!analysis.value) return
+
+  downloadingPDF.value = true
+  try {
+    await analysisStore.downloadPDFReport(analysis.value.id)
+  } catch (error) {
+    console.error('Failed to download PDF report:', error)
+  } finally {
+    downloadingPDF.value = false
   }
 }
 

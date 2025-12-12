@@ -21,6 +21,12 @@ class DICAnalysis(models.Model):
         default=Status.PENDING
     )
     
+    # пользовательские данные образца
+    sample_name = models.CharField(max_length=255, blank=True, null=True, verbose_name="Наименование образца")
+    material = models.CharField(max_length=255, blank=True, null=True, verbose_name="Материал")
+    manufacture = models.CharField(max_length=255, blank=True, null=True, verbose_name="Изготавитель")
+    test_date = models.DateField(blank=True, null=True, verbose_name="Дата испытания образца")
+    
     # Параметры анализа
     subset_size = models.IntegerField(
         default=25,

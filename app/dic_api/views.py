@@ -18,16 +18,15 @@ import io
 import json
 from datetime import timedelta
 from django.utils import timezone
-from django.http import HttpResponse, FileResponse, HttpResponseRedirect
-from django.conf import settings
+from django.http import HttpResponse, FileResponse
 import json
 from .models import DICAnalysis
 from .serealisers import DICAnalysisSerializer, DICAnalysisCreateSerializer
 from .sync_processor import SyncDICProcessor
 from django.http import JsonResponse
 from django.middleware.csrf import get_token
-
-
+from .pdf_generator import DICAnalysisPDFGenerator
+    
 class StandardPagination(PageNumberPagination):
     """Стандартная пагинация."""
     page_size = 10
@@ -67,13 +66,10 @@ class DICAnalysisViewSet(viewsets.ModelViewSet):
             print(f"DEBUG: Serializer errors: {serializer.errors}")
         serializer.is_valid(raise_exception=True)
         
-        # Создаем задачу
         dic_analysis = serializer.save()
         
-        # Запускаем обработку в отдельном потоке
         task_id = str(dic_analysis.id)
         
-        # Создаем поток для обработки
         thread = threading.Thread(
             target=self._process_dic_task,
             args=(
@@ -89,7 +85,6 @@ class DICAnalysisViewSet(viewsets.ModelViewSet):
         )
         thread.start()
         
-        # Возвращаем информацию о созданной задаче
         response_serializer = DICAnalysisSerializer(
             dic_analysis,
             context={'request': request}
@@ -105,7 +100,6 @@ class DICAnalysisViewSet(viewsets.ModelViewSet):
         """Получение списка всех задач с фильтрацией."""
         queryset = self.filter_queryset(self.get_queryset())
         
-        # Дополнительная фильтрация по дате
         date_from = request.query_params.get('date_from')
         date_to = request.query_params.get('date_to')
         
@@ -114,7 +108,6 @@ class DICAnalysisViewSet(viewsets.ModelViewSet):
         if date_to:
             queryset = queryset.filter(created_at__lte=date_to)
         
-        # Дополнительная фильтрация по наличию результатов
         has_results = request.query_params.get('has_results')
         if has_results == 'true':
             queryset = queryset.filter(displacement_map_path__isnull=False)
@@ -135,11 +128,13 @@ class DICAnalysisViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(instance)
         data = serializer.data
         
-        # Добавляем абсолютные URL для изображений
         if instance.displacement_map_path:
-            data['displacement_map_url'] = request.build_absolute_uri(
-                instance.displacement_map_path.url
-            )
+            from django.conf import settings
+            full_path = os.path.join(settings.MEDIA_ROOT, instance.displacement_map_path)
+            if os.path.exists(full_path):
+                data['displacement_map_url'] = request.build_absolute_uri(
+                    f'/media/results/{os.path.basename(instance.displacement_map_path)}'
+                )
         
         if instance.image_before:
             data['image_before_url'] = request.build_absolute_uri(
@@ -152,25 +147,6 @@ class DICAnalysisViewSet(viewsets.ModelViewSet):
             )
         
         return Response(data)
-    
-    @action(detail=True, methods=['post'])
-    def cancel(self, request, pk=None):
-        """Отмена выполнения задачи."""
-        dic_analysis = self.get_object()
-        
-        if dic_analysis.status not in [DICAnalysis.Status.COMPLETED, DICAnalysis.Status.ERROR]:
-            dic_analysis.status = DICAnalysis.Status.CANCELLED
-            dic_analysis.save()
-            return Response(
-                {'message': 'Задача успешно отменена'},
-                status=status.HTTP_200_OK
-            )
-        
-        return Response(
-            {'error': 'Невозможно отменить завершенную или ошибочную задачу'},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-    
     @action(detail=True, methods=['get'])
     def download(self, request, pk=None):
         """Скачивание результатов задачи в ZIP архиве."""
@@ -186,7 +162,6 @@ class DICAnalysisViewSet(viewsets.ModelViewSet):
 
         print(f"DOWNLOAD: Analysis {instance.id} is completed, preparing ZIP file")
         
-        # Создаем ZIP архив в памяти
         zip_buffer = io.BytesIO()
         
         with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
@@ -237,40 +212,53 @@ class DICAnalysisViewSet(viewsets.ModelViewSet):
                 zip_file.writestr('analysis_results.json', json_data.encode('utf-8'))
                 files_added += 1
 
+            # Генерируем PDF отчет
+            print(f"DOWNLOAD: Generating PDF report")
+            try:
+                from .pdf_generator import DICAnalysisPDFGenerator
+                pdf_generator = DICAnalysisPDFGenerator()
+                pdf_buffer = pdf_generator.generate_report(instance)
+                zip_file.writestr('analysis_report.pdf', pdf_buffer.getvalue())
+                files_added += 1
+                print(f"DOWNLOAD: PDF report added to ZIP")
+            except Exception as pdf_error:
+                print(f"DOWNLOAD: Failed to generate PDF report: {pdf_error}")
+                # Continue without PDF if generation fails
+
             # Добавляем статистику в текстовом файле
             print(f"DOWNLOAD: Adding summary text file to ZIP")
-            summary = f"""Результаты анализа DIC
+            summary = f"""DIC Analysis Results
 ==========================
-Название: {instance.name}
-ID задачи: {instance.id}
-Дата создания: {instance.created_at}
-Дата завершения: {instance.completed_at}
+Name: {instance.name}
+Task ID: {instance.id}
+Created: {instance.created_at}
+Completed: {instance.completed_at}
 
-Параметры анализа:
-- Размер окна: {instance.subset_size}
-- Шаг анализа: {instance.step}
-- Макс. итераций: {instance.max_iter}
-- Минимальная корреляция: {instance.min_correlation}
+Analysis Parameters:
+- Window Size: {instance.subset_size}
+- Step Size: {instance.step}
+- Max Iterations: {instance.max_iter}
+- Min Correlation: {instance.min_correlation}
 
-Статистика:
-- Максимальное смещение: {instance.max_displacement if instance.max_displacement else 'Н/Д'}
-- Среднее смещение: {instance.mean_displacement if instance.mean_displacement else 'Н/Д'}
-- Медианное смещение: {instance.median_displacement if instance.median_displacement else 'Н/Д'}
-- Стандартное отклонение: {instance.std_displacement if instance.std_displacement else 'Н/Д'}
-- Качество корреляции: {instance.correlation_quality if instance.correlation_quality else 'Н/Д'}
-- Надежные точки: {instance.reliable_points_percentage if instance.reliable_points_percentage else 'Н/Д'}%
-- Время обработки: {instance.processing_time if instance.processing_time else 'Н/Д'} сек
+Statistics:
+- Max Displacement: {instance.max_displacement if instance.max_displacement else 'N/A'}
+- Mean Displacement: {instance.mean_displacement if instance.mean_displacement else 'N/A'}
+- Median Displacement: {instance.median_displacement if instance.median_displacement else 'N/A'}
+- Std Deviation: {instance.std_displacement if instance.std_displacement else 'N/A'}
+- Correlation Quality: {instance.correlation_quality if instance.correlation_quality else 'N/A'}
+- Reliable Points: {instance.reliable_points_percentage if instance.reliable_points_percentage else 'N/A'}%
+- Processing Time: {instance.processing_time if instance.processing_time else 'N/A'} sec
 
-Ссылки на файлы:
-- Изображение до деформации: {instance.image_before.url if instance.image_before else 'Н/Д'}
-- Изображение после деформации: {instance.image_after.url if instance.image_after else 'Н/Д'}
-- Карта смещений: {f"/media/results/{os.path.basename(instance.displacement_map_path)}" if instance.displacement_map_path else 'Н/Д'}
+File Links:
+- Before Image: {instance.image_before.url if instance.image_before else 'N/A'}
+- After Image: {instance.image_after.url if instance.image_after else 'N/A'}
+- Displacement Map: {f"/media/results/{os.path.basename(instance.displacement_map_path)}" if instance.displacement_map_path else 'N/A'}
 
-Системная информация:
-- Имя хоста: {request.get_host()}
-- Время генерации: {timezone.now()}
+System Information:
+- Host: {request.get_host()}
+- Generated: {timezone.now()}
 """
-            
+
             zip_file.writestr('summary.txt', summary.encode('utf-8'))
             files_added += 1
 
@@ -394,66 +382,7 @@ ID задачи: {instance.id}
             'recent_tasks': recent_data,
             'timeline': timeline
         })
-    
-    @action(detail=False, methods=['get'])
-    def recent(self, request):
-        """Получение последних задач."""
-        recent_tasks = self.get_queryset()[:10]
-        serializer = self.get_serializer(recent_tasks, many=True)
-        return Response(serializer.data)
-    
-    @action(detail=False, methods=['post'])
-    def bulk_delete(self, request):
-        """Массовое удаление задач."""
-        task_ids = request.data.get('task_ids', [])
-        
-        if not task_ids:
-            return Response(
-                {'error': 'Не указаны ID задач для удаления'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        # Фильтруем только существующие задачи
-        tasks_to_delete = self.get_queryset().filter(id__in=task_ids)
-        deleted_count = tasks_to_delete.count()
-        
-        # Удаляем задачи
-        tasks_to_delete.delete()
-        
-        return Response({
-            'message': f'Удалено {deleted_count} задач',
-            'deleted_count': deleted_count
-        })
-    
-    @action(detail=False, methods=['get'])
-    def summary(self, request):
-        """Краткая сводка по задачам."""
-        total = self.get_queryset().count()
-        completed = self.get_queryset().filter(status=DICAnalysis.Status.COMPLETED).count()
-        
-        # Последние 5 задач
-        latest_tasks = self.get_queryset()[:5]
-        latest_serializer = self.get_serializer(latest_tasks, many=True)
-        
-        # Задачи в обработке
-        processing_tasks = self.get_queryset().filter(status=DICAnalysis.Status.PROCESSING)
-        processing_serializer = self.get_serializer(processing_tasks, many=True)
-        
-        return Response({
-            'total_tasks': total,
-            'completed_tasks': completed,
-            'success_rate': round((completed / total * 100) if total > 0 else 0, 1),
-            'latest_tasks': latest_serializer.data,
-            'processing_tasks': processing_serializer.data,
-            'tasks_by_status': {
-                'pending': self.get_queryset().filter(status=DICAnalysis.Status.PENDING).count(),
-                'processing': processing_tasks.count(),
-                'completed': completed,
-                'error': self.get_queryset().filter(status=DICAnalysis.Status.ERROR).count(),
-                'cancelled': self.get_queryset().filter(status=DICAnalysis.Status.CANCELLED).count()
-            }
-        })
-    
+
     def _process_dic_task(self, task_id, img1_path, img2_path,
                          subset_size, step, max_iter, min_correlation):
         """
@@ -522,6 +451,31 @@ ID задачи: {instance.id}
             
         except Exception as e:
             print(f"Ошибка при обновлении задачи {task_id}: {e}")
+    
+    @action(detail=True, methods=['get'])
+    def pdf_generate(self, request, pk=None):
+        """Генерирует и возвращает PDF отчет анализа."""
+        instance = self.get_object()
+        
+        if instance.status !=DICAnalysis.Status.COMPLETED:
+            return Response(
+                {'eror': 'отчет может быть сгенирирован только для завершенного анализа'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            pdf_generator = DICAnalysisPDFGenerator()
+            pdf_buffer = pdf_generator.generate_report(instance)
+            
+            response = HttpResponse(pdf_buffer, content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="dic_report_{instance.id}.pdf"'
+            return response
+        
+        except Exception as e:
+            return Response(
+                {'error': f'Ошибка при генерации PDF: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 @require_POST
 @csrf_exempt

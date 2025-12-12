@@ -13,6 +13,12 @@ export interface DICAnalysis {
   status: DICAnalysisStatus;
   status_display: string;
 
+  // Sample information
+  sample_name?: string;
+  material?: string;
+  manufacturer?: string;
+  test_date?: string;
+
   // Parameters
   subset_size: number;
   step: number;
@@ -65,6 +71,12 @@ export interface DICAnalysisCreate {
   step?: number;
   max_iter?: number;
   min_correlation?: number;
+
+  // Sample information
+  sample_name?: string;
+  material?: string;
+  manufacturer?: string;
+  test_date?: string;
 }
 
 export interface DICAnalysisStats {

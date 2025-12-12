@@ -154,6 +154,26 @@ export const useAnalysisStore = defineStore('analysis', () => {
     }
   }
 
+  async function downloadPDFReport(id: string) {
+    try {
+      const response = await apiService.downloadPDFReport(id);
+
+      // Create download link
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `dic_report_${id}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      error.value = err.response?.data?.detail || 'Failed to download PDF report';
+      console.error('Error downloading PDF report:', err);
+      throw err;
+    }
+  }
+
   async function fetchStats() {
     try {
       const response = await apiService.getStats();
@@ -276,6 +296,7 @@ export const useAnalysisStore = defineStore('analysis', () => {
     createAnalysis,
     cancelAnalysis,
     downloadResults,
+    downloadPDFReport,
     fetchStats,
     fetchSummary,
     bulkDeleteAnalyses,

@@ -10,6 +10,10 @@ class DICAnalysisCreateSerializer(serializers.ModelSerializer):
         model = DICAnalysis
         fields = [
             'name',
+            'sample_name',
+            'material', 
+            'manufacture',
+            'test_date',
             'image_before',
             'image_after',
             'subset_size',

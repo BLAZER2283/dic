@@ -88,7 +88,11 @@ class ApiService {
       subset_size: data.subset_size,
       step: data.step,
       max_iter: data.max_iter,
-      min_correlation: data.min_correlation
+      min_correlation: data.min_correlation,
+      sample_name: data.sample_name,
+      material: data.material,
+      manufacturer: data.manufacturer,
+      test_date: data.test_date
     });
 
     // Get CSRF token first
@@ -111,6 +115,12 @@ class ApiService {
     if (data.step) formData.append('step', data.step.toString());
     if (data.max_iter) formData.append('max_iter', data.max_iter.toString());
     if (data.min_correlation) formData.append('min_correlation', data.min_correlation.toString());
+
+    // Sample information
+    if (data.sample_name) formData.append('sample_name', data.sample_name);
+    if (data.material) formData.append('material', data.material);
+    if (data.manufacturer) formData.append('manufacturer', data.manufacturer);
+    if (data.test_date) formData.append('test_date', data.test_date);
 
     // Add CSRF token to FormData for multipart requests
     if (csrfToken) {
@@ -159,6 +169,12 @@ class ApiService {
 
   async downloadAnalysisResults(id: string): Promise<AxiosResponse<Blob>> {
     return this.api.get(`/analyses/${id}/download/`, {
+      responseType: 'blob',
+    });
+  }
+
+  async downloadPDFReport(id: string): Promise<AxiosResponse<Blob>> {
+    return this.api.get(`/analyses/${id}/pdf_generate/`, {
       responseType: 'blob',
     });
   }

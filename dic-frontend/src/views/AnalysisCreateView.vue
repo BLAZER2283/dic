@@ -183,6 +183,56 @@
                 </v-row>
               </div>
 
+              <!-- Sample Information Section -->
+              <div class="mb-6">
+                <h3 class="text-h6 mb-4">Sample Information</h3>
+                <p class="text-body-2 text-grey-darken-1 mb-4">
+                  Provide information about the sample being tested. This will be included in the analysis report.
+                </p>
+
+                <v-row>
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model="formData.sample_name"
+                      label="Sample Name"
+                      placeholder="Enter sample name or identifier"
+                      hint="Descriptive name for the tested sample"
+                      persistent-hint
+                    />
+                  </v-col>
+
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model="formData.material"
+                      label="Material"
+                      placeholder="Enter material type"
+                      hint="Material composition or type"
+                      persistent-hint
+                    />
+                  </v-col>
+
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model="formData.manufacturer"
+                      label="Manufacturer"
+                      placeholder="Enter manufacturer name"
+                      hint="Company or entity that produced the sample"
+                      persistent-hint
+                    />
+                  </v-col>
+
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model="formData.test_date"
+                      label="Test Date"
+                      type="date"
+                      hint="Date when the test was performed"
+                      persistent-hint
+                    />
+                  </v-col>
+                </v-row>
+              </div>
+
               <!-- Parameters Section -->
               <div class="mb-6">
                 <h3 class="text-h6 mb-4">Analysis Parameters</h3>
@@ -367,6 +417,11 @@ const formData = reactive({
   step: 12,
   max_iter: 35,
   min_correlation: 0.4,
+  // Sample information
+  sample_name: '',
+  material: '',
+  manufacturer: '',
+  test_date: '',
 })
 
 // Form state
@@ -478,7 +533,11 @@ const submitForm = async () => {
     subset_size: formData.subset_size,
     step: formData.step,
     max_iter: formData.max_iter,
-    min_correlation: formData.min_correlation
+    min_correlation: formData.min_correlation,
+    sample_name: formData.sample_name,
+    material: formData.material,
+    manufacturer: formData.manufacturer,
+    test_date: formData.test_date
   })
 
   // Check if form exists
