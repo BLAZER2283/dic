@@ -100,6 +100,7 @@ CORS_ALLOW_METHODS = [
 ]
 
 
+<<<<<<< HEAD
 # Database configuration
 DATABASE_URL = os.getenv('DATABASE_URL')
 
@@ -120,8 +121,17 @@ else:
             'HOST': 'localhost',
             'PORT': '5432',
         }
+=======
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'dic',
+        'USER': 'asa',
+        'PASSWORD': '23449365Afg',
+        'HOST': 'localhost',
+        'PORT': '5432',
+>>>>>>> f6cea8fbec8e4c0b47a40c9d344a6d270f02097c
     }
-
 
 
 RESULTS_ROOT = BASE_DIR / 'results'
