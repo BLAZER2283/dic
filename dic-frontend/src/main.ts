@@ -1,58 +1,24 @@
 import { createApp } from 'vue'
-import { createRouter, createWebHistory } from 'vue-router'
-import DashboardView from './views/DashboardView.vue'
+import App from './App.vue'
+import router from './router'
 
-console.log('Starting Vue app...')
+import 'vuetify/styles'
+import { createVuetify } from 'vuetify'
+import * as components from 'vuetify/components'
+import * as directives from 'vuetify/directives'
+import '@mdi/font/css/materialdesignicons.css'
 
-try {
-  const app = createApp({
-    template: `
-      <div id="app">
-        <div style="padding: 20px; font-family: Arial, sans-serif;">
-          <h1 style="color: #1976D2;">DIC Analyzer</h1>
-          <p>Vue.js приложение загружено успешно!</p>
+const vuetify = createVuetify({
+  components,
+  directives,
+  theme: {
+    defaultTheme: 'light'
+  }
+})
 
-          <div style="margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
-            <h2>Отладочная информация:</h2>
-            <p><strong>Текущее время:</strong> {{ currentTime }}</p>
-            <p><strong>Vue версия:</strong> {{ vueVersion }}</p>
-          </div>
+const app = createApp(App)
 
-          <div style="margin: 20px 0;">
-            <button
-              @click="counter++"
-              style="padding: 10px 20px; background: #1976D2; color: white; border: none; border-radius: 4px; cursor: pointer;"
-            >
-              Счетчик: {{ counter }}
-            </button>
-          </div>
+app.use(router)
+app.use(vuetify)
 
-          <DashboardView />
-        </div>
-      </div>
-    `,
-    data() {
-      return {
-        counter: 0,
-        currentTime: new Date().toLocaleString(),
-        vueVersion: '3.x'
-      }
-    },
-    components: {
-      DashboardView
-    },
-    mounted() {
-      console.log('App component mounted')
-      setInterval(() => {
-        this.currentTime = new Date().toLocaleString()
-      }, 1000)
-    }
-  })
-
-  console.log('App created')
-
-  app.mount('#app')
-  console.log('App mounted successfully!')
-} catch (error) {
-  console.error('Error initializing Vue app:', error)
-}
+app.mount('#app')

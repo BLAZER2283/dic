@@ -213,7 +213,7 @@
 
                   <v-col cols="12" md="6">
                     <v-text-field
-                      v-model="formData.manufacturer"
+                      v-model="formData.manufacture"
                       label="Manufacturer"
                       placeholder="Enter manufacturer name"
                       hint="Company or entity that produced the sample"
@@ -420,7 +420,7 @@ const formData = reactive({
   // Sample information
   sample_name: '',
   material: '',
-  manufacturer: '',
+  manufacture: '',
   test_date: '',
 })
 
@@ -536,7 +536,7 @@ const submitForm = async () => {
     min_correlation: formData.min_correlation,
     sample_name: formData.sample_name,
     material: formData.material,
-    manufacturer: formData.manufacturer,
+    manufacture: formData.manufacture,
     test_date: formData.test_date
   })
 

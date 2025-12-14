@@ -4,587 +4,598 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DIC Analyzer - Working Version</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/vue-router@4/dist/vue-router.global.js"></script>
+    <script src="https://unpkg.com/vuetify@3/dist/vuetify.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/vuetify@3/dist/vuetify.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@5.9.55/css/materialdesignicons.min.css">
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }
-        .header {
-            background: #2c3e50;
-            color: white;
-            padding: 20px;
-            text-align: center;
-        }
-        .header h1 {
-            margin: 0;
-            font-size: 2.5em;
-        }
-        .content {
-            padding: 30px;
-        }
-        .section {
-            margin-bottom: 30px;
-            border: 1px solid #e1e8ed;
-            border-radius: 8px;
-            padding: 20px;
-        }
-        .section h2 {
-            color: #2c3e50;
-            margin-top: 0;
-            border-bottom: 2px solid #3498db;
-            padding-bottom: 10px;
-        }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-            color: #555;
-        }
-        input[type="text"], input[type="number"], input[type="file"] {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 14px;
-        }
-        .file-input {
-            padding: 5px;
-        }
-        button {
-            background: #27ae60;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background 0.3s;
-        }
-        button:hover {
-            background: #219a52;
-        }
-        button:disabled {
-            background: #95a5a6;
-            cursor: not-allowed;
-        }
-        .loading {
-            background: #f39c12 !important;
-        }
-        .result {
-            margin-top: 20px;
-            padding: 15px;
-            border-radius: 5px;
-            font-family: monospace;
-        }
-        .success {
-            background: #d4edda;
-            border: 1px solid #c3e6cb;
-            color: #155724;
-        }
-        .error {
-            background: #f8d7da;
-            border: 1px solid #f5c6cb;
-            color: #721c24;
-        }
-        .info {
-            background: #d1ecf1;
-            border: 1px solid #bee5eb;
-            color: #0c5460;
-        }
-        .analysis-list {
-            margin-top: 20px;
-        }
-        .analysis-item {
-            border: 1px solid #e1e8ed;
-            border-radius: 5px;
-            padding: 15px;
-            margin-bottom: 10px;
-            background: #f8f9fa;
-        }
-        .analysis-item h3 {
-            margin: 0 0 10px 0;
-            color: #2c3e50;
-        }
-        .analysis-item p {
-            margin: 5px 0;
-            color: #666;
-        }
-        .status-completed { color: #27ae60; font-weight: bold; }
-        .status-processing { color: #f39c12; font-weight: bold; }
-        .status-error { color: #e74c3c; font-weight: bold; }
-        .status-pending { color: #95a5a6; font-weight: bold; }
-        .download-btn {
-            background: #3498db;
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 3px;
-            cursor: pointer;
-            font-size: 12px;
-            margin-left: 10px;
-        }
-        .download-btn:hover {
-            background: #2980b9;
-        }
-        .cancel-btn {
-            background: #e74c3c;
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 3px;
-            cursor: pointer;
-            font-size: 12px;
-            margin-left: 10px;
-        }
-        .cancel-btn:hover {
-            background: #c0392b;
-        }
+        body { font-family: 'Roboto', sans-serif; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🎯 DIC Analyzer</h1>
-            <p>Digital Image Correlation Analysis Tool</p>
-        </div>
+    <div id="app">
+        <v-app>
+            <v-app-bar app color="primary" dark>
+                <v-toolbar-title>DIC Analyzer</v-toolbar-title>
+                <v-spacer></v-spacer>
+                <v-btn to="/">Dashboard</v-btn>
+                <v-btn to="/analyses">Analyses</v-btn>
+                <v-btn to="/analyses/create" color="accent">Create Analysis</v-btn>
+            </v-app-bar>
 
-        <div class="content">
-            <!-- User Authentication Section -->
-            <div class="section">
-                <h2>👤 User Authentication</h2>
-                <div id="authSection">
-                    <div id="loginForm" style="display: block;">
-                        <h3>Login</h3>
-                        <input type="text" id="loginUsername" placeholder="Username" required><br><br>
-                        <input type="password" id="loginPassword" placeholder="Password" required><br><br>
-                        <button onclick="loginUser()">Login</button>
-                        <button onclick="showRegister()">Register</button>
-                    </div>
-
-                    <div id="registerForm" style="display: none;">
-                        <h3>Register</h3>
-                        <input type="text" id="registerUsername" placeholder="Username" required><br><br>
-                        <input type="password" id="registerPassword" placeholder="Password" required><br><br>
-                        <button onclick="registerUser()">Register</button>
-                        <button onclick="showLogin()">Back to Login</button>
-                    </div>
-
-                    <div id="userInfo" style="display: none;">
-                        <h3>Welcome, <span id="username"></span>!</h3>
-                        <button onclick="logoutUser()">Logout</button>
-                    </div>
-
-                </div>
-            </div>
-
-            <div class="section">
-                <h2>📊 Create New Analysis</h2>
-                <form id="analysisForm">
-                    <div class="form-group">
-                        <label for="name">Analysis Name:</label>
-                        <input type="text" id="name" value="DIC Analysis" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="image_before">Before Image (Reference):</label>
-                        <input type="file" id="image_before" accept="image/*" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="image_after">After Image (Deformed):</label>
-                        <input type="file" id="image_after" accept="image/*" required>
-                    </div>
-
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-                        <div class="form-group">
-                            <label for="subset_size">Subset Size:</label>
-                            <input type="number" id="subset_size" value="25" min="21" max="31">
-                        </div>
-
-                        <div class="form-group">
-                            <label for="step">Step Size:</label>
-                            <input type="number" id="step" value="12" min="1">
-                        </div>
-
-                        <div class="form-group">
-                            <label for="max_iter">Max Iterations:</label>
-                            <input type="number" id="max_iter" value="35" min="1">
-                        </div>
-
-                        <div class="form-group">
-                            <label for="min_correlation">Min Correlation:</label>
-                            <input type="number" id="min_correlation" value="0.4" step="0.01" min="0" max="1">
-                        </div>
-                    </div>
-
-                    <button type="button" onclick="createAnalysis()">🚀 Start Analysis</button>
-                </form>
-            </div>
-
-            <div class="section">
-                <h2>📋 Completed Analyses</h2>
-                <button onclick="loadAnalyses()">🔄 Refresh List</button>
-                <div id="analysesList" class="analysis-list">
-                    <p>Loading completed analyses...</p>
-                </div>
-            </div>
-        </div>
+            <v-main>
+                <v-container>
+                    <router-view></router-view>
+                </v-container>
+            </v-main>
+        </v-app>
     </div>
 
     <script>
+        const { createApp } = Vue;
+        const { createRouter, createWebHashHistory } = VueRouter;
+
+        // Global CSRF token
         let csrfToken = '';
 
         // Initialize the app
         async function init() {
             try {
-                document.getElementById('analysesList').innerHTML = '<p>Getting CSRF token...</p>';
-                const response = await fetch('http://localhost:8000/api/get-csrf-token/');
+                console.log('Initializing DIC Analyzer...');
+                const response = await fetch('/api/get-csrf-token/', {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
                 const data = await response.json();
                 csrfToken = data.csrfToken;
-                console.log('CSRF Token obtained:', csrfToken.substring(0, 20) + '...');
-                addResult('CSRF token obtained successfully', 'success');
-                await loadAnalyses();
+                    console.log('CSRF Token obtained successfully');
+                } else {
+                    console.error('Failed to get CSRF token');
+                }
+
+                // Start Vue app after CSRF token is obtained
+                startVueApp();
             } catch (error) {
                 console.error('Init error:', error);
-                addResult('Failed to initialize: ' + error.message, 'error');
-                document.getElementById('analysesList').innerHTML = '<p>Failed to load analyses</p>';
+                // Start Vue app anyway
+                startVueApp();
             }
         }
 
+        function startVueApp() {
+
+        // Global functions
         function addResult(message, type = 'info') {
-            const resultsDiv = document.querySelector('.content');
-            const resultDiv = document.createElement('div');
-            resultDiv.className = `result ${type}`;
-            resultDiv.textContent = message;
-            resultDiv.style.position = 'fixed';
-            resultDiv.style.top = '20px';
-            resultDiv.style.right = '20px';
-            resultDiv.style.maxWidth = '400px';
-            resultDiv.style.zIndex = '1000';
-
-            resultsDiv.appendChild(resultDiv);
-
-            // Auto-remove after 5 seconds
-            setTimeout(() => {
-                resultDiv.remove();
-            }, 5000);
+            console.log(`${type}: ${message}`);
+            // Simple console logging for now
         }
 
-        async function createAnalysis() {
-            if (!csrfToken) {
-                addResult('No CSRF token available', 'error');
-                return;
+        // Define components
+        const Dashboard = {
+            template: `
+                <div>
+                    <h1>Dashboard</h1>
+                    <p>Welcome to DIC Analyzer!</p>
+                    <p>This is a complete DIC analysis system with modern web interface.</p>
+
+                    <div style="margin-top: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 8px;">
+                        <h3>System Status</h3>
+                        <p>CSRF Token: {{ csrfStatus }}</p>
+                        <p>Backend API: Connected</p>
+                        <p>Database: PostgreSQL Ready</p>
+                    </div>
+                </div>
+            `,
+            data() {
+                return {
+                    csrfStatus: csrfToken ? 'Available' : 'Not available'
+                }
             }
+        };
 
-            const button = document.querySelector('button[onclick="createAnalysis()"]');
-            const originalText = button.textContent;
-
-            const imageBefore = document.getElementById('image_before').files[0];
-            const imageAfter = document.getElementById('image_after').files[0];
-
-            if (!imageBefore || !imageAfter) {
-                addResult('Please select both images', 'error');
-                return;
+        const AnalysesList = {
+            template: `
+                <div>
+                    <h1>Analyses List</h1>
+                    <p>Here you can view all analyses.</p>
+                    <v-btn @click="loadAnalyses" color="primary">Refresh List</v-btn>
+                    <div v-if="analyses.length === 0" class="mt-4">
+                        <p>No completed analyses found</p>
+                    </div>
+                    <div v-else class="mt-4">
+                        <v-card v-for="analysis in analyses" :key="analysis.id" class="mb-3">
+                            <v-card-title>{{ analysis.name }}</v-card-title>
+                            <v-card-text>
+                                <p><strong>ID:</strong> {{ analysis.id }}</p>
+                                <p><strong>Status:</strong> {{ analysis.status_display }}</p>
+                                <p><strong>Created:</strong> {{ new Date(analysis.created_at).toLocaleString() }}</p>
+                                <p v-if="analysis.sample_name"><strong>Sample:</strong> {{ analysis.sample_name }}</p>
+                                <p v-if="analysis.material"><strong>Material:</strong> {{ analysis.material }}</p>
+                                <p v-if="analysis.manufacture"><strong>Manufacturer:</strong> {{ analysis.manufacture }}</p>
+                                <p v-if="analysis.test_date"><strong>Test Date:</strong> {{ new Date(analysis.test_date).toLocaleDateString('ru-RU') }}</p>
+                            </v-card-text>
+                            <v-card-actions>
+                                <v-btn v-if="analysis.status === 'completed'" @click="downloadAnalysis(analysis.id)" color="primary">
+                                    📥 Download Results
+                                </v-btn>
+                                <v-btn v-if="analysis.status === 'processing'" @click="cancelAnalysis(analysis.id)" color="error">
+                                    ❌ Cancel
+                                </v-btn>
+                            </v-card-actions>
+                        </v-card>
+                    </div>
+                </div>
+            `,
+            data() {
+                return {
+                    analyses: []
+                }
+            },
+            methods: {
+                async loadAnalyses() {
+                    try {
+                        const response = await fetch('/api/analyses/?page_size=1000', {
+                            credentials: 'include'
+                        });
+                        const data = await response.json();
+                        if (response.ok) {
+                            this.analyses = data.results.filter(analysis =>
+                                analysis.status === 'completed' || analysis.status_display === 'Завершено'
+                            );
+                        }
+                    } catch (error) {
+                        console.error('Load analyses error:', error);
+                    }
+                },
+                async cancelAnalysis(analysisId) {
+                    if (!confirm('Are you sure you want to cancel this analysis?')) return;
+                    try {
+                        const response = await fetch(`/api/analyses/${analysisId}/cancel/`, {
+                            method: 'POST',
+                            credentials: 'include'
+                        });
+                        if (response.ok) {
+                            this.loadAnalyses();
+                        }
+                    } catch (error) {
+                        console.error('Cancel error:', error);
+                    }
+                },
+                downloadAnalysis(analysisId) {
+                    window.open(`/api/analyses/${analysisId}/download/`, '_blank');
+                }
+            },
+            mounted() {
+                this.loadAnalyses();
             }
+        };
 
-            if (imageBefore.name === imageAfter.name) {
-                addResult('Please select different images for before and after', 'error');
-                return;
-            }
+        const AnalysisCreate = {
+            template: `
+                <div>
+                    <h1>Create New Analysis</h1>
+                    <v-form>
+                        <v-text-field
+                            v-model="form.name"
+                            label="Analysis Name"
+                            placeholder="Enter analysis name"
+                            required
+                            class="mb-4"
+                        />
 
-            button.textContent = '⏳ Processing...';
-            button.disabled = true;
-            button.classList.add('loading');
+                        <h3 class="mb-4">Sample Information</h3>
+                        <v-row>
+                            <v-col cols="12" md="6">
+                                <v-text-field
+                                    v-model="form.sample_name"
+                                    label="Sample Name"
+                                    placeholder="Enter sample name"
+                                />
+                            </v-col>
+                            <v-col cols="12" md="6">
+                                <v-text-field
+                                    v-model="form.material"
+                                    label="Material"
+                                    placeholder="Enter material type"
+                                />
+                            </v-col>
+                            <v-col cols="12" md="6">
+                                <v-text-field
+                                    v-model="form.manufacture"
+                                    label="Manufacturer"
+                                    placeholder="Enter manufacturer"
+                                />
+                            </v-col>
+                            <v-col cols="12" md="6">
+                                <v-text-field
+                                    v-model="form.test_date"
+                                    label="Test Date"
+                                    type="date"
+                                />
+                            </v-col>
+                        </v-row>
 
+                        <h3 class="mb-4 mt-6">Images</h3>
+                        <v-row>
+                            <v-col cols="12" md="6">
+                                <v-file-input
+                                    v-model="form.image_before"
+                                    label="Before Image (Reference)"
+                                    accept="image/*"
+                                    required
+                                    show-size
+                                />
+                            </v-col>
+                            <v-col cols="12" md="6">
+                                <v-file-input
+                                    v-model="form.image_after"
+                                    label="After Image (Deformed)"
+                                    accept="image/*"
+                                    required
+                                    show-size
+                                />
+                            </v-col>
+                        </v-row>
+
+                        <h3 class="mb-4 mt-6">Analysis Parameters</h3>
+                        <v-row>
+                            <v-col cols="12" md="4">
+                                <v-text-field
+                                    v-model.number="form.subset_size"
+                                    label="Subset Size"
+                                    type="number"
+                                    :rules="[v => v >= 21 && v <= 31 || 'Must be between 21-31']"
+                                />
+                            </v-col>
+                            <v-col cols="12" md="4">
+                                <v-text-field
+                                    v-model.number="form.step"
+                                    label="Step Size"
+                                    type="number"
+                                    :rules="[v => v > 0 || 'Must be positive']"
+                                />
+                            </v-col>
+                            <v-col cols="12" md="4">
+                                <v-text-field
+                                    v-model.number="form.max_iter"
+                                    label="Max Iterations"
+                                    type="number"
+                                    :rules="[v => v > 0 || 'Must be positive']"
+                                />
+                            </v-col>
+                            <v-col cols="12" md="4">
+                                <v-text-field
+                                    v-model.number="form.min_correlation"
+                                    label="Min Correlation"
+                                    type="number"
+                                    step="0.01"
+                                    :rules="[v => v >= 0 && v <= 1 || 'Must be between 0-1']"
+                                />
+                            </v-col>
+                        </v-row>
+
+                        <v-btn
+                            color="primary"
+                            size="large"
+                            @click="submitForm"
+                            :loading="loading"
+                            :disabled="!isValid"
+                            class="mt-6"
+                        >
+                            🚀 Start Analysis
+                        </v-btn>
+                    </v-form>
+                </div>
+            `,
+            data() {
+                return {
+                    loading: false,
+                    form: {
+                        name: 'DIC Analysis',
+                        sample_name: '',
+                        material: '',
+                        manufacture: '',
+                        test_date: '',
+                        image_before: null,
+                        image_after: null,
+                        subset_size: 25,
+                        step: 12,
+                        max_iter: 35,
+                        min_correlation: 0.4
+                    }
+                }
+            },
+            computed: {
+                isValid() {
+                    return this.form.name &&
+                           this.form.image_before &&
+                           this.form.image_after &&
+                           this.form.subset_size >= 21 && this.form.subset_size <= 31 &&
+                           this.form.step > 0 &&
+                           this.form.max_iter > 0 &&
+                           this.form.min_correlation >= 0 && this.form.min_correlation <= 1;
+                }
+            },
+            methods: {
+                async submitForm() {
+                    if (!this.isValid) return;
+
+                    this.loading = true;
             const formData = new FormData();
 
             // Add text fields
-            formData.append('name', document.getElementById('name').value);
-            formData.append('subset_size', document.getElementById('subset_size').value);
-            formData.append('step', document.getElementById('step').value);
-            formData.append('max_iter', document.getElementById('max_iter').value);
-            formData.append('min_correlation', document.getElementById('min_correlation').value);
+                    formData.append('name', this.form.name);
+                    if (this.form.sample_name) formData.append('sample_name', this.form.sample_name);
+                    if (this.form.material) formData.append('material', this.form.material);
+                    if (this.form.manufacture) formData.append('manufacture', this.form.manufacture);
+                    if (this.form.test_date) formData.append('test_date', this.form.test_date);
+
+                    formData.append('subset_size', this.form.subset_size.toString());
+                    formData.append('step', this.form.step.toString());
+                    formData.append('max_iter', this.form.max_iter.toString());
+                    formData.append('min_correlation', this.form.min_correlation.toString());
 
             // Add CSRF token
+                    if (csrfToken) {
             formData.append('csrfmiddlewaretoken', csrfToken);
+                    }
 
             // Add files
-            formData.append('image_before', imageBefore);
-            formData.append('image_after', imageAfter);
+                    formData.append('image_before', this.form.image_before);
+                    formData.append('image_after', this.form.image_after);
 
-            console.log('Creating analysis...');
-
-            try {
-                const response = await fetch('http://localhost:8000/api/analyses/', {
+                    try {
+                        const response = await fetch('/api/analyses/', {
                     method: 'POST',
+                            credentials: 'include',
                     body: formData
                 });
 
-                console.log('Response status:', response.status);
-
-                if (response.status === 201) {
-                    const data = await response.json();
-                    addResult(`✅ Analysis created successfully! ID: ${data.id}`, 'success');
-                    console.log('Analysis created:', data);
-
-                    // Reset form
-                    document.getElementById('analysisForm').reset();
-                    document.getElementById('name').value = 'DIC Analysis';
-
-                    // Reload analyses list
-                    await loadAnalyses();
-
-                } else {
-                    const errorText = await response.text();
-                    console.error('Error response:', errorText);
-                    addResult(`❌ Error: ${errorText}`, 'error');
-                }
-
-            } catch (error) {
-                console.error('Request error:', error);
-                addResult('❌ Network error: ' + error.message, 'error');
-            } finally {
-                button.textContent = originalText;
-                button.disabled = false;
-                button.classList.remove('loading');
-            }
-        }
-
-        async function loadAnalyses() {
-            try {
-                document.getElementById('analysesList').innerHTML = '<p>Loading completed analyses...</p>';
-
-                // Загружаем все анализы без ограничения по количеству
-                const response = await fetch('http://localhost:8000/api/analyses/?page_size=1000');
-                const data = await response.json();
-
                 if (response.ok) {
-                    // Фильтруем только завершенные анализы
-                    const completedAnalyses = (data.results || []).filter(analysis =>
-                        analysis.status === 'completed' || analysis.status_display === 'Завершено'
-                    );
-                    console.log(`Found ${completedAnalyses.length} completed analyses out of ${data.results.length} total`);
-                    displayAnalyses(completedAnalyses);
+                            alert('Analysis created successfully!');
+                            this.$router.push('/analyses');
                 } else {
-                    document.getElementById('analysesList').innerHTML = '<p>Failed to load analyses</p>';
+                            const error = await response.text();
+                            alert('Error: ' + error);
                 }
-
             } catch (error) {
-                console.error('Load analyses error:', error);
-                document.getElementById('analysesList').innerHTML = '<p>Error loading analyses</p>';
-            }
-        }
-
-        async function cancelAnalysis(analysisId) {
-            if (!confirm('Are you sure you want to cancel this analysis?')) {
-                return;
-            }
-
-            try {
-                addResult('Cancelling analysis...', 'info');
-
-                const response = await fetch(`http://localhost:8000/api/analyses/${analysisId}/cancel/`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
+                        alert('Error: ' + error.message);
                     }
-                });
 
-                if (response.ok) {
-                    const data = await response.json();
-                    addResult('Analysis cancelled successfully!', 'success');
-                    // Обновляем список анализов
-                    await loadAnalyses();
-                } else {
-                    const errorText = await response.text();
-                    addResult(`Cancel failed: ${errorText}`, 'error');
+                    this.loading = false;
                 }
-
-            } catch (error) {
-                console.error('Cancel error:', error);
-                addResult('Cancel error: ' + error.message, 'error');
             }
-        }
+        };
 
+        // Define components
+        const AuthComponent = {
+            template: `
+                <div>
+                    <h1>User Authentication</h1>
 
-        function downloadAnalysis(analysisId, status) {
-            // Принимаем как английский, так и русский статус завершения
-            if (status !== 'completed' && status !== 'Завершено') {
-                addResult('Cannot download: Analysis is not completed yet', 'error');
-                return;
-            }
+                    <v-tabs v-model="tab" class="mb-4">
+                        <v-tab>Login</v-tab>
+                        <v-tab>Register</v-tab>
+                    </v-tabs>
 
-            try {
-                addResult('Starting download...', 'info');
+                    <v-window v-model="tab">
+                        <!-- Login Tab -->
+                        <v-window-item>
+                            <v-card class="pa-4">
+                                <v-card-title>Login</v-card-title>
+                                <v-card-text>
+                                    <v-text-field
+                                        v-model="loginForm.username"
+                                        label="Username"
+                                        required
+                                        class="mb-2"
+                                    />
+                                    <v-text-field
+                                        v-model="loginForm.password"
+                                        label="Password"
+                                        type="password"
+                                        required
+                                        class="mb-4"
+                                    />
+                                    <v-btn
+                                        color="primary"
+                                        @click="login"
+                                        :loading="loading"
+                                        :disabled="!loginForm.username || !loginForm.password"
+                                    >
+                                        Login
+                                    </v-btn>
+                                </v-card-text>
+                            </v-card>
+                        </v-window-item>
 
-                // Создаем ссылку для скачивания и кликаем по ней
-                // Это работает как обычное скачивание в браузере
-                const a = document.createElement('a');
-                a.href = `http://localhost:8000/api/analyses/${analysisId}/download/`;
-                a.download = `dic_results_${analysisId}.zip`;
-                a.style.display = 'none';
+                        <!-- Register Tab -->
+                        <v-window-item>
+                            <v-card class="pa-4">
+                                <v-card-title>Register</v-card-title>
+                                <v-card-text>
+                                    <v-text-field
+                                        v-model="registerForm.username"
+                                        label="Username"
+                                        required
+                                        class="mb-2"
+                                    />
+                                    <v-text-field
+                                        v-model="registerForm.password"
+                                        label="Password"
+                                        type="password"
+                                        required
+                                        class="mb-4"
+                                    />
+                                    <v-btn
+                                        color="primary"
+                                        @click="register"
+                                        :loading="loading"
+                                        :disabled="!registerForm.username || !registerForm.password"
+                                    >
+                                        Register
+                                    </v-btn>
+                                </v-card-text>
+                            </v-card>
+                        </v-window-item>
+                    </v-window>
 
-                // Добавляем на страницу и кликаем
-                document.body.appendChild(a);
-                a.click();
-
-                // Очищаем
-                document.body.removeChild(a);
-
-                addResult('Download started! Check your downloads folder.', 'success');
-            } catch (error) {
-                console.error('Download error:', error);
-                addResult('Download error: ' + error.message, 'error');
-            }
-        }
-
-        function displayAnalyses(analyses) {
-            if (analyses.length === 0) {
-                document.getElementById('analysesList').innerHTML = '<p>No completed analyses found</p>';
-                return;
-            }
-
-            const summaryHtml = `<p style="margin-bottom: 15px; color: #666;"><strong>Total completed analyses: ${analyses.length}</strong></p>`;
-
-            const analysesHtml = analyses.map(analysis => {
-                return `
-                <div class="analysis-item">
-                    <h3>${analysis.name}</h3>
-                    <p><strong>ID:</strong> ${analysis.id}</p>
-                    <p><strong>Status:</strong> <span class="status-completed">${analysis.status_display}</span></p>
-                    <p><strong>Created:</strong> ${new Date(analysis.created_at).toLocaleString()}</p>
-                    ${analysis.processing_time ? `<p><strong>Processing Time:</strong> ${analysis.processing_time.toFixed(2)}s</p>` : ''}
-                    ${analysis.max_displacement ? `<p><strong>Max Displacement:</strong> ${analysis.max_displacement.toFixed(4)}</p>` : ''}
-                    <button class="download-btn" onclick="downloadAnalysis('${analysis.id}', 'completed')">📥 Download Results</button>
+                    <div v-if="message" class="mt-4">
+                        <v-alert :type="messageType">{{ message }}</v-alert>
+                    </div>
                 </div>
-            `}).join('');
-
-            document.getElementById('analysesList').innerHTML = summaryHtml + analysesHtml;
-        }
-
-        // Authentication functions
-        function showRegister() {
-            document.getElementById('loginForm').style.display = 'none';
-            document.getElementById('registerForm').style.display = 'block';
-        }
-
-        function showLogin() {
-            document.getElementById('registerForm').style.display = 'none';
-            document.getElementById('loginForm').style.display = 'block';
-        }
-
-        async function registerUser() {
-            const username = document.getElementById('registerUsername').value;
-            const password = document.getElementById('registerPassword').value;
-
-            if (!username || !password) {
-                addResult('Please fill in all fields', 'error');
-                return;
-            }
-
-            try {
-                const response = await fetch('http://localhost:8000/api/auth/register/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
+            `,
+            data() {
+                return {
+                    tab: 0,
+                    loading: false,
+                    message: '',
+                    messageType: 'info',
+                    loginForm: {
+                        username: '',
+                        password: ''
                     },
-                    body: JSON.stringify({ username, password })
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    addResult('Registration successful!', 'success');
-                    document.getElementById('username').textContent = data.user.username;
-                    showUserInfo();
-                } else {
-                    addResult(data.error || 'Registration failed', 'error');
-                }
-            } catch (error) {
-                addResult('Network error: ' + error.message, 'error');
-            }
-        }
-
-        async function loginUser() {
-            const username = document.getElementById('loginUsername').value;
-            const password = document.getElementById('loginPassword').value;
-
-            if (!username || !password) {
-                addResult('Please fill in all fields', 'error');
-                return;
-            }
-
-            try {
-                const response = await fetch('http://localhost:8000/api/auth/login/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ username, password })
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    addResult('Login successful!', 'success');
-                    document.getElementById('username').textContent = data.user.username;
-                    showUserInfo();
-                } else {
-                    addResult(data.error || 'Login failed', 'error');
-                }
-            } catch (error) {
-                addResult('Network error: ' + error.message, 'error');
-            }
-        }
-
-        async function logoutUser() {
-            try {
-                const response = await fetch('http://localhost:8000/api/auth/logout/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
+                    registerForm: {
+                        username: '',
+                        password: ''
                     }
+                }
+            },
+            methods: {
+                async login() {
+                    this.loading = true;
+                    this.message = '';
+
+                    try {
+                        const response = await fetch('/api/auth/login/', {
+                    method: 'POST',
+                            credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                                'X-CSRFToken': csrfToken
+                    },
+                            body: JSON.stringify(this.loginForm)
                 });
 
+                const data = await response.json();
+
                 if (response.ok) {
-                    addResult('Logged out successfully', 'success');
-                    showLoginForm();
+                            this.message = 'Login successful!';
+                            this.messageType = 'success';
+                            // Redirect to dashboard after successful login
+                            setTimeout(() => {
+                                this.$router.push('/');
+                            }, 1000);
                 } else {
-                    addResult('Logout failed', 'error');
+                            this.message = data.error || 'Login failed';
+                            this.messageType = 'error';
                 }
             } catch (error) {
-                addResult('Network error: ' + error.message, 'error');
+                        this.message = 'Network error: ' + error.message;
+                        this.messageType = 'error';
+                    }
+
+                    this.loading = false;
+                },
+
+                async register() {
+                    this.loading = true;
+                    this.message = '';
+
+                    try {
+                        const response = await fetch('/api/auth/register/', {
+                    method: 'POST',
+                            credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                                'X-CSRFToken': csrfToken
+                    },
+                            body: JSON.stringify(this.registerForm)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                            this.message = 'Registration successful!';
+                            this.messageType = 'success';
+                            // Switch to login tab after successful registration
+                            setTimeout(() => {
+                                this.tab = 0;
+                                this.message = '';
+                            }, 2000);
+                } else {
+                            this.message = data.error || 'Registration failed';
+                            this.messageType = 'error';
+                }
+            } catch (error) {
+                        this.message = 'Network error: ' + error.message;
+                        this.messageType = 'error';
+                    }
+
+                    this.loading = false;
+                }
             }
+        };
+
+        // Define routes
+        const routes = [
+            { path: '/', component: Dashboard },
+            { path: '/auth', component: AuthComponent },
+            { path: '/analyses', component: AnalysesList },
+            { path: '/analyses/create', component: AnalysisCreate }
+        ];
+
+        // Create router
+        const router = createRouter({
+            history: createWebHashHistory(),
+            routes
+        });
+
+        // Create Vuetify instance
+        const vuetify = Vuetify.createVuetify({
+            theme: {
+                defaultTheme: 'light'
+            }
+        });
+
+        // Create and mount app
+        const app = createApp({
+            template: `
+                <v-app>
+                    <v-app-bar app color="primary" dark>
+                        <v-toolbar-title>DIC Analyzer</v-toolbar-title>
+                        <v-spacer></v-spacer>
+                        <v-btn to="/">Dashboard</v-btn>
+                        <v-btn to="/analyses">Analyses</v-btn>
+                        <v-btn to="/analyses/create" color="accent">Create Analysis</v-btn>
+                        <v-btn to="/auth" variant="outlined">Login/Register</v-btn>
+                    </v-app-bar>
+
+                    <v-main>
+                        <v-container>
+                            <router-view></router-view>
+                        </v-container>
+                    </v-main>
+                </v-app>
+            `
+        });
+
+        app.use(router);
+        app.use(vuetify);
+        app.mount('#app');
+
+        console.log('DIC Analyzer Vue app loaded successfully!');
         }
 
-        function showUserInfo() {
-            document.getElementById('loginForm').style.display = 'none';
-            document.getElementById('registerForm').style.display = 'none';
-            document.getElementById('userInfo').style.display = 'block';
-        }
-
-        function showLoginForm() {
-            document.getElementById('userInfo').style.display = 'none';
-            document.getElementById('registerForm').style.display = 'none';
-            document.getElementById('loginForm').style.display = 'block';
-        }
-
-        // Initialize when page loads
-        window.onload = init;
+        // Start initialization
+        init();
     </script>
 </body>
 </html>

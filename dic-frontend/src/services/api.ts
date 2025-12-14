@@ -91,7 +91,7 @@ class ApiService {
       min_correlation: data.min_correlation,
       sample_name: data.sample_name,
       material: data.material,
-      manufacturer: data.manufacturer,
+      manufacture: data.manufacture,
       test_date: data.test_date
     });
 
@@ -119,7 +119,7 @@ class ApiService {
     // Sample information
     if (data.sample_name) formData.append('sample_name', data.sample_name);
     if (data.material) formData.append('material', data.material);
-    if (data.manufacturer) formData.append('manufacturer', data.manufacturer);
+    if (data.manufacture) formData.append('manufacture', data.manufacture);
     if (data.test_date) formData.append('test_date', data.test_date);
 
     // Add CSRF token to FormData for multipart requests
@@ -143,7 +143,10 @@ class ApiService {
       console.log('DEBUG: Sending request with fetch...');
       const response = await fetch('/api/analyses/', {
         method: 'POST',
-        body: formData
+        body: formData,
+        headers: {
+          'X-CSRFToken': csrfToken
+        }
       });
 
       console.log('DEBUG: Response status:', response.status);

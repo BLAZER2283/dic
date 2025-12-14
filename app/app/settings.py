@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -71,10 +72,8 @@ TEMPLATES = [
 ]
 WSGI_APPLICATION = 'app.wsgi.application'
 ASGI_APPLICATION = 'app.asgi.application'
-# Разрешить CORS для всех в разработке
 CORS_ALLOW_ALL_ORIGINS = True
 
-# Или для точной настройки:
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:5173",
@@ -82,16 +81,15 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:5173",
 ]
 
-# Разрешить куки
 CORS_ALLOW_CREDENTIALS = True
 
-# CSRF настройки для разработки
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    "http://localhost:8080",
+    "http://127.0.0.1:8080",
 ]
 
-# Разрешенные методы
 CORS_ALLOW_METHODS = [
     'DELETE',
     'GET',
@@ -102,12 +100,27 @@ CORS_ALLOW_METHODS = [
 ]
 
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+# Database configuration
+DATABASE_URL = os.getenv('DATABASE_URL')
+
+if DATABASE_URL:
+    # Parse DATABASE_URL for Docker environment
+    import dj_database_url
+    DATABASES = {
+        'default': dj_database_url.parse(DATABASE_URL)
     }
-}
+else:
+    # Local development database
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'dic',
+            'USER': 'asa',
+            'PASSWORD': '23449365Afg',
+            'HOST': 'localhost',
+            'PORT': '5432',
+        }
+    }
 
 
 
@@ -116,7 +129,7 @@ RESULTS_ROOT = BASE_DIR / 'results'
 STATICFILES_DIRS = [
     BASE_DIR / 'static'
 ]
-STATIC_ROOT = BASE_DIR / 'staticfiles'  # Для collectstatic
+STATIC_ROOT = BASE_DIR / 'staticfiles'  
 
 # Медиа файлы
 MEDIA_URL = 'media/'
