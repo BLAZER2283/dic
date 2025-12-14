@@ -100,18 +100,14 @@ CORS_ALLOW_METHODS = [
 ]
 
 
-<<<<<<< HEAD
-# Database configuration
-DATABASE_URL = os.getenv('DATABASE_URL')
+DATABASE_URL = os.environ.get('DATABASE_URL')
 
 if DATABASE_URL:
-    # Parse DATABASE_URL for Docker environment
     import dj_database_url
     DATABASES = {
         'default': dj_database_url.parse(DATABASE_URL)
     }
 else:
-    # Local development database
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
@@ -121,7 +117,7 @@ else:
             'HOST': 'localhost',
             'PORT': '5432',
         }
-=======
+    }
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -130,8 +126,8 @@ DATABASES = {
         'PASSWORD': '23449365Afg',
         'HOST': 'localhost',
         'PORT': '5432',
->>>>>>> f6cea8fbec8e4c0b47a40c9d344a6d270f02097c
     }
+}
 
 
 RESULTS_ROOT = BASE_DIR / 'results'
