@@ -101,12 +101,8 @@ CORS_ALLOW_METHODS = [
 ]
 
 
-<<<<<<< HEAD
-# Database configuration
 DATABASE_URL = os.getenv('DATABASE_URL')
-=======
 DATABASE_URL = os.environ.get('DATABASE_URL')
->>>>>>> c2e084c8149c50e6ded9603258f330b79101d61b
 
 if DATABASE_URL:
     import dj_database_url
@@ -123,8 +119,6 @@ else:
             'HOST': 'localhost',
             'PORT': '5432',
         }
-<<<<<<< HEAD
-=======
     }
 DATABASES = {
     'default': {
@@ -134,7 +128,6 @@ DATABASES = {
         'PASSWORD': '23449365Afg',
         'HOST': 'localhost',
         'PORT': '5432',
->>>>>>> c2e084c8149c50e6ded9603258f330b79101d61b
     }
 }
 
