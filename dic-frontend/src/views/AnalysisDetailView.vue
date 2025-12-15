@@ -1,4 +1,5 @@
-<template>
+
+git commit -m "Resolve merge conflict in settings.py and complete Docker setup"<template>
   <div class="analysis-detail">
     <!-- Header -->
     <v-row class="mb-6">

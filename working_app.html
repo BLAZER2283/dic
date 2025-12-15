@@ -355,6 +355,9 @@
                         const response = await fetch('/api/analyses/', {
                     method: 'POST',
                             credentials: 'include',
+                    headers: {
+                        'X-CSRFToken': csrfToken
+                    },
                     body: formData
                 });
 
