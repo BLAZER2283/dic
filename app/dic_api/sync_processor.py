@@ -15,7 +15,6 @@ import matplotlib.pyplot as plt
 # Импортируем ваш синхронный DIC алгоритм
 from dic_algoritm.dic_algorithm import DigitalImageCorrelation
 
-
 class SyncDICProcessor:
     """
     Синхронный процессор для DIC анализа.
