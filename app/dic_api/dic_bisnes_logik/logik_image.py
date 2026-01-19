@@ -78,7 +78,7 @@ class ImageActionsMixin:
             # Генерируем PDF отчет
             print(f"DOWNLOAD: Generating PDF report")
             try:
-                from ..pdf_generator import DICAnalysisPDFGenerator
+                from .pdf_generator import DICAnalysisPDFGenerator
                 pdf_generator = DICAnalysisPDFGenerator()
                 pdf_buffer = pdf_generator.generate_report(instance)
                 zip_file.writestr('analysis_report.pdf', pdf_buffer.getvalue())

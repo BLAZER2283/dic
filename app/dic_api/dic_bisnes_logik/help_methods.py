@@ -1,4 +1,4 @@
-from ..sync_processor import SyncDICProcessor
+from .sync_processor import SyncDICProcessor
 from ..models import DICAnalysis
 
 class HelpMethods:

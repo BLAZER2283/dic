@@ -1,5 +1,5 @@
 from rest_framework.decorators import action
-from ..pdf_generator import DICAnalysisPDFGenerator
+from .pdf_generator import DICAnalysisPDFGenerator
 from rest_framework.response import Response
 from rest_framework import status
 from django.http import HttpResponse
