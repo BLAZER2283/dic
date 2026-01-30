@@ -1,14 +1,13 @@
-from django.utils.decorators import method_decorator
 import threading  
-from django.views.decorators.csrf import csrf_exempt
 from ..serealisers import DICAnalysisSerializer
 from rest_framework.response import Response
 import os
 from rest_framework import status
+from rest_framework import viewsets
+from .help_methods import HelpMethods
 
-class DefaultMethodsMixin:
+class DefaultMethodsMixin(viewsets.ModelViewSet):
     
-    @method_decorator(csrf_exempt)
     def create(self, request, *args, **kwargs):
         """Создание новой задачи анализа."""
         print(f"DEBUG: Create request data keys: {list(request.data.keys())}")
@@ -26,7 +25,7 @@ class DefaultMethodsMixin:
         task_id = str(dic_analysis.id)
         
         thread = threading.Thread(
-            target=self._process_dic_task,
+            target=HelpMethods()._process_dic_task,
             args=(
                 task_id,
                 dic_analysis.image_before.path,

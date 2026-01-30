@@ -1,5 +1,3 @@
-from rest_framework import viewsets
-from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
@@ -13,15 +11,13 @@ from django.http import JsonResponse
 from django.middleware.csrf import get_token
 from .dic_bisnes_logik.default_methods import DefaultMethodsMixin
 from .dic_bisnes_logik.logik_image import ImageActionsMixin
-from .dic_bisnes_logik.help_methods import HelpMethods
 from .dic_bisnes_logik.generate import PdfGenerateMixin
+
 
 class DICAnalysisViewSet(
     DefaultMethodsMixin,
     ImageActionsMixin,
-    HelpMethods,
     PdfGenerateMixin,
-    viewsets.ModelViewSet
 ):
     """
     ViewSet для работы с задачами DIC анализа.
@@ -35,35 +31,15 @@ class DICAnalysisViewSet(
     ordering_fields = ['created_at', 'completed_at', 'processing_time', 'max_displacement']
     permission_classes = [rest_framework.permissions.AllowAny]
     
+    def get_queryset(self):
+        import time
+        time.sleep(8)
+        return super().get_queryset()   
+    
     def get_serializer_class(self):
         if self.action == 'create':
             return DICAnalysisCreateSerializer
         return DICAnalysisSerializer
-    
-    def create(self, request, *args, **kwargs):
-        return super().create(request, *args, **kwargs)
-
-    def list(self, request, *args, **kwargs):
-        return super().list(request, *args, **kwargs)
-
-    def retrieve(self, request, *args, **kwargs):
-        return super().retrieve(request, *args, **kwargs)
-    
-    @action(detail=True, methods=['get'])
-    def download(self, request, pk=None):
-        return super().download(request, pk)
-
-    @action(detail=True, methods=['get'])
-    def image(self, request, pk=None):
-        return super().image(request, pk)
-    
-    @action(detail=False, methods=['get'])
-    def stats(self, request):
-        return super().stats(request)
-    
-    @action(detail=True, methods=['get'])
-    def pdf_generate(self, request, pk=None):
-        return super().pdf_generate(request, pk)
 
 @require_POST
 @csrf_exempt

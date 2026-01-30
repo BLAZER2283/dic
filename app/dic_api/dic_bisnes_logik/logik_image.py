@@ -8,9 +8,13 @@ import json
 from ..models import DICAnalysis
 from rest_framework import status
 from django.http import HttpResponse
+from rest_framework.decorators import action
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 
 class ImageActionsMixin:
     
+    @action(detail=True, methods=['get'])
     def download(self, request, pk=None):
         """Скачивание результатов задачи в ZIP архиве."""
         instance = self.get_object()
@@ -142,6 +146,7 @@ System Information:
         print(f"DOWNLOAD: Sending ZIP file to client")
         return response
     
+    @action(detail=True, methods=['get'])
     def image(self, request, pk=None):
         """Получение изображения результатов."""
         instance = self.get_object()

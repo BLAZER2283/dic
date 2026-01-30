@@ -4,9 +4,15 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.http import HttpResponse
 from ..models import DICAnalysis
+from rest_framework.decorators import action
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
+
 
 class PdfGenerateMixin:
     """Миксин для генерации PDF отчетов DIC."""
+    
+    @action(detail=True, methods=['get'])
     def pdf_generate(self, request, pk=None):
         """Генерирует и возвращает PDF отчет анализа."""
         instance = self.get_object()

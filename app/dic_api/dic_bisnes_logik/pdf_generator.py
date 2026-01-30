@@ -7,10 +7,7 @@ from io import BytesIO
 
 class DICAnalysisPDFGenerator:
     """Генератор PDF отчетов для DIC анализа."""
-
-    def __init__(self):
-        pass
-        
+    
     def generate_report(self, analysis):
         """Генерирует PDF отчет для завершенного анализа."""
         buffer = BytesIO()
