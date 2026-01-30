@@ -15,6 +15,7 @@ from .dic_bisnes_logik.default_methods import DefaultMethodsMixin
 from .dic_bisnes_logik.logik_image import ImageActionsMixin
 from .dic_bisnes_logik.help_methods import HelpMethods
 from .dic_bisnes_logik.generate import PdfGenerateMixin
+
 class DICAnalysisViewSet(
     DefaultMethodsMixin,
     ImageActionsMixin,
