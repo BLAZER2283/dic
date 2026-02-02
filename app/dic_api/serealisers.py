@@ -37,7 +37,7 @@ class DICAnalysisSerializer(serializers.ModelSerializer):
     
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     
-    # URL для изображений
+    
     image_before_url = serializers.SerializerMethodField()
     image_after_url = serializers.SerializerMethodField()
     result_image_url = serializers.SerializerMethodField()

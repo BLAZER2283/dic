@@ -16,5 +16,4 @@ psycopg2-binary==2.9.10
 reportlab==4.2.5
 dj-database-url==2.3.0
 django-redis
-pip install drf-spectacular
 drf-spectacular[sidecar]

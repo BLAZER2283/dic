@@ -1,0 +1,32 @@
+{
+  "image_paths": {
+    "deformed_image": "real_results\\s\\s_deformed.png",
+    "displacement_map": "real_results\\s\\s_displacement.png",
+    "original_image": "real_results\\s\\s_original.png"
+  },
+  "parameters": {
+    "max_iter": 40,
+    "min_correlation": 0.4,
+    "step": 13,
+    "subset_size": 27
+  },
+  "statistics": {
+    "analysis_points": 1530,
+    "correlation_quality": 0.9999999996390685,
+    "image_shape": [
+      677,
+      415
+    ],
+    "max_displacement": 4.577566798522237e-08,
+    "mean_displacement": 1.1891294206186454e-09,
+    "median_displacement": 0.0,
+    "processing_time_seconds": 43.656806,
+    "reliable_points_percentage": 100.0,
+    "std_displacement": 4.273192725063763e-09,
+    "step_size": 13,
+    "window_size": 27
+  },
+  "status": "completed",
+  "test_id": "s",
+  "timestamp": "2026-02-02T18:08:46.266878"
+}

@@ -21,11 +21,11 @@ class DICAnalysis(models.Model):
         default=Status.PENDING
     )
     
-    # пользовательские данные образца
     sample_name = models.CharField(max_length=255, blank=True, null=True, verbose_name="Наименование образца")
     material = models.CharField(max_length=255, blank=True, null=True, verbose_name="Материал")
     manufacture = models.CharField(max_length=255, blank=True, null=True, verbose_name="Изготавитель")
     test_date = models.DateField(blank=True, null=True, verbose_name="Дата испытания образца")
+    
     
     # Параметры анализа
     subset_size = models.IntegerField(
@@ -36,18 +36,15 @@ class DICAnalysis(models.Model):
     max_iter = models.IntegerField(default=35)
     min_correlation = models.FloatField(default=0.4)
     
-    # Изображения
     image_before = models.ImageField(upload_to='uploads/before/')
     image_after = models.ImageField(upload_to='uploads/after/')
     
-    # Результаты
     result_json = models.JSONField(null=True, blank=True)
     result_image_path = models.CharField(max_length=500, null=True, blank=True)
     original_image_path = models.CharField(max_length=500, null=True, blank=True)
     deformed_image_path = models.CharField(max_length=500, null=True, blank=True)
     displacement_map_path = models.CharField(max_length=500, null=True, blank=True)
     
-    # Статистика
     mean_displacement = models.FloatField(null=True, blank=True)
     max_displacement = models.FloatField(null=True, blank=True)
     median_displacement = models.FloatField(null=True, blank=True)
@@ -55,14 +52,12 @@ class DICAnalysis(models.Model):
     correlation_quality = models.FloatField(null=True, blank=True)
     reliable_points_percentage = models.FloatField(null=True, blank=True)
     
-    # Метаданные
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     started_at = models.DateTimeField(null=True, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
     processing_time = models.FloatField(null=True, blank=True)  
     
-    # Ошибки
     error_message = models.TextField(null=True, blank=True)
     error_traceback = models.TextField(null=True, blank=True)
     
