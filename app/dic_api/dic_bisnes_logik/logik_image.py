@@ -1,16 +1,13 @@
-from django.http import FileResponse
+from django.http import FileResponse, HttpResponse
 from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.decorators import action
 from django.utils import timezone
 import zipfile
 import io
 import os
 import json
-from ..models import DICAnalysis
-from rest_framework import status
-from django.http import HttpResponse
-from rest_framework.decorators import action
-from django.utils.decorators import method_decorator
-from django.views.decorators.cache import cache_page
+from ..models import AnalysisTask
 import logging
 
 logger = logging.getLogger(__name__)
@@ -20,56 +17,61 @@ class ImageActionsMixin:
 
     @action(detail=True, methods=["get"])
     def download(self, request, pk=None):
-        """Скачивание результатов задачи в ZIP архиве."""
+        """Download task results as ZIP archive."""
         instance = self.get_object()
 
-        if instance.status != DICAnalysis.Status.COMPLETED:
+        if instance.status != AnalysisTask.Status.COMPLETED:
             logger.warning("DOWNLOAD: Analysis %s not completed (status: %s)", instance.id, instance.status)
-            return Response({"error": "Задача еще не завершена"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Task is not completed yet"}, status=status.HTTP_400_BAD_REQUEST)
 
         zip_buffer = io.BytesIO()
 
         with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
             files_added = 0
 
-            if instance.displacement_map_path:
-                displacement_path = instance.displacement_map_path
-                if os.path.exists(displacement_path):
-                    with open(displacement_path, "rb") as img_file:
-                        zip_file.writestr("displacement_map.png", img_file.read())
-                    files_added += 1
-                else:
-                    logger.warning("DOWNLOAD: Displacement map file not found: %s", displacement_path)
+            # Images from AnalysisImages
+            if hasattr(instance, 'images'):
+                images = instance.images
 
-            if instance.image_before and hasattr(instance.image_before, "path"):
-                before_path = instance.image_before.path
-                if os.path.exists(before_path):
-                    with open(before_path, "rb") as img_file:
-                        zip_file.writestr("original_before.png", img_file.read())
-                    files_added += 1
-                else:
-                    logger.warning("DOWNLOAD: Before image file not found: %s", before_path)
+                if images.displacement_map_path:
+                    if os.path.exists(images.displacement_map_path):
+                        with open(images.displacement_map_path, "rb") as img_file:
+                            zip_file.writestr("displacement_map.png", img_file.read())
+                        files_added += 1
+                    else:
+                        logger.warning("DOWNLOAD: Displacement map file not found: %s", images.displacement_map_path)
 
-            if instance.image_after and hasattr(instance.image_after, "path"):
-                after_path = instance.image_after.path
-                if os.path.exists(after_path):
-                    with open(after_path, "rb") as img_file:
-                        zip_file.writestr("original_after.png", img_file.read())
-                    files_added += 1
-                else:
-                    logger.warning("DOWNLOAD: After image file not found: %s", after_path)
+                if images.image_before and hasattr(images.image_before, "path"):
+                    before_path = images.image_before.path
+                    if os.path.exists(before_path):
+                        with open(before_path, "rb") as img_file:
+                            zip_file.writestr("original_before.png", img_file.read())
+                        files_added += 1
+                    else:
+                        logger.warning("DOWNLOAD: Before image file not found: %s", before_path)
 
-            if instance.result_json:
-                if isinstance(instance.result_json, str):
-                    json_data = instance.result_json
+                if images.image_after and hasattr(images.image_after, "path"):
+                    after_path = images.image_after.path
+                    if os.path.exists(after_path):
+                        with open(after_path, "rb") as img_file:
+                            zip_file.writestr("original_after.png", img_file.read())
+                        files_added += 1
+                    else:
+                        logger.warning("DOWNLOAD: After image file not found: %s", after_path)
+
+            # Results from AnalysisResults
+            if hasattr(instance, 'results') and instance.results.result_json:
+                result_json = instance.results.result_json
+                if isinstance(result_json, str):
+                    json_data = result_json
                 else:
-                    json_data = json.dumps(instance.result_json, indent=2, ensure_ascii=False)
+                    json_data = json.dumps(result_json, indent=2, ensure_ascii=False)
                 zip_file.writestr("analysis_results.json", json_data.encode("utf-8"))
                 files_added += 1
 
+            # PDF report
             try:
                 from .pdf_generator import DICAnalysisPDFGenerator
-
                 pdf_generator = DICAnalysisPDFGenerator()
                 pdf_buffer = pdf_generator.generate_report(instance)
                 zip_file.writestr("analysis_report.pdf", pdf_buffer.getvalue())
@@ -77,38 +79,8 @@ class ImageActionsMixin:
             except Exception as pdf_error:
                 logger.exception("DOWNLOAD: Failed to generate PDF report: %s", pdf_error)
 
-            summary = f"""DIC Analysis Results
-==========================
-Name: {instance.name}
-Task ID: {instance.id}
-Created: {instance.created_at}
-Completed: {instance.completed_at}
-
-Analysis Parameters:
-- Window Size: {instance.subset_size}
-- Step Size: {instance.step}
-- Max Iterations: {instance.max_iter}
-- Min Correlation: {instance.min_correlation}
-
-Statistics:
-- Max Displacement: {instance.max_displacement if instance.max_displacement else 'N/A'}
-- Mean Displacement: {instance.mean_displacement if instance.mean_displacement else 'N/A'}
-- Median Displacement: {instance.median_displacement if instance.median_displacement else 'N/A'}
-- Std Deviation: {instance.std_displacement if instance.std_displacement else 'N/A'}
-- Correlation Quality: {instance.correlation_quality if instance.correlation_quality else 'N/A'}
-- Reliable Points: {instance.reliable_points_percentage if instance.reliable_points_percentage else 'N/A'}%
-- Processing Time: {instance.processing_time if instance.processing_time else 'N/A'} sec
-
-File Links:
-- Before Image: {instance.image_before.url if instance.image_before else 'N/A'}
-- After Image: {instance.image_after.url if instance.image_after else 'N/A'}
-- Displacement Map: {f"/media/results/{os.path.basename(instance.displacement_map_path)}" if instance.displacement_map_path else 'N/A'}
-
-System Information:
-- Host: {request.get_host()}
-- Generated: {timezone.now()}
-"""
-
+            # Summary
+            summary = self._generate_summary(instance, request)
             zip_file.writestr("summary.txt", summary.encode("utf-8"))
             files_added += 1
 
@@ -125,24 +97,56 @@ System Information:
 
     @action(detail=True, methods=["get"])
     def image(self, request, pk=None):
-        """Получение изображения результатов."""
+        """Get result image."""
         instance = self.get_object()
         image_type = request.query_params.get("type", "displacement")
 
         image_path = None
 
-        if image_type == "displacement" and instance.displacement_map_path:
-            image_path = instance.displacement_map_path
-        elif image_type == "before" and instance.image_before:
-            image_path = instance.image_before.path
-        elif image_type == "after" and instance.image_after:
-            image_path = instance.image_after.path
+        if hasattr(instance, 'images'):
+            images = instance.images
+
+            if image_type == "displacement" and images.displacement_map_path:
+                image_path = images.displacement_map_path
+            elif image_type == "before" and images.image_before:
+                image_path = images.image_before.path
+            elif image_type == "after" and images.image_after:
+                image_path = images.image_after.path
 
         if image_path and os.path.exists(image_path):
             ext = os.path.splitext(image_path)[1].lower()
             content_type = f"image/{ext[1:]}" if ext else "image/png"
-
             return FileResponse(open(image_path, "rb"), content_type=content_type, as_attachment=False)
 
-        return Response({"error": "Изображение не найдено"}, status=404)
-    
+        return Response({"error": "Image not found"}, status=404)
+
+    def _generate_summary(self, instance, request):
+        """Generate text summary."""
+        params = instance.parameters if hasattr(instance, 'parameters') else None
+        results = instance.results if hasattr(instance, 'results') else None
+        images = instance.images if hasattr(instance, 'images') else None
+
+        return f"""DIC Analysis Results
+==========================
+Name: {instance.name}
+Task ID: {instance.id}
+Created: {instance.created_at}
+Completed: {instance.completed_at}
+
+Analysis Parameters:
+- Window Size: {params.subset_size if params else 'N/A'}
+- Step Size: {params.step if params else 'N/A'}
+- Max Iterations: {params.max_iter if params else 'N/A'}
+- Min Correlation: {params.min_correlation if params else 'N/A'}
+
+Statistics:
+- Max Displacement: {results.max_displacement if results and results.max_displacement else 'N/A'}
+- Mean Displacement: {results.mean_displacement if results and results.mean_displacement else 'N/A'}
+- Median Displacement: {results.median_displacement if results and results.median_displacement else 'N/A'}
+- Std Deviation: {results.std_displacement if results and results.std_displacement else 'N/A'}
+- Correlation Quality: {results.correlation_quality if results and results.correlation_quality else 'N/A'}
+- Reliable Points: {results.reliable_points_percentage if results and results.reliable_points_percentage else 'N/A'}%
+- Processing Time: {instance.processing_time if instance.processing_time else 'N/A'} sec
+
+Generated: {timezone.now()}
+"""

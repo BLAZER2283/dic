@@ -3,37 +3,33 @@ from .pdf_generator import DICAnalysisPDFGenerator
 from rest_framework.response import Response
 from rest_framework import status
 from django.http import HttpResponse
-from ..models import DICAnalysis
-from rest_framework.decorators import action
-from django.utils.decorators import method_decorator
-from django.views.decorators.cache import cache_page
+from ..models import AnalysisTask
 
 
 class PdfGenerateMixin:
-    """Миксин для генерации PDF отчетов DIC."""
-    
+    """Mixin for generating DIC PDF reports."""
+
     @action(detail=True, methods=['get'])
     def pdf_generate(self, request, pk=None):
-        """Генерирует и возвращает PDF отчет анализа."""
+        """Generate and return DIC analysis PDF report."""
         instance = self.get_object()
-        
-        if instance.status !=DICAnalysis.Status.COMPLETED:
+
+        if instance.status != AnalysisTask.Status.COMPLETED:
             return Response(
-                {'eror': 'отчет может быть сгенирирован только для завершенного анализа'},
+                {'error': 'Report can only be generated for completed analysis'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         try:
             pdf_generator = DICAnalysisPDFGenerator()
             pdf_buffer = pdf_generator.generate_report(instance)
-            
+
             response = HttpResponse(pdf_buffer, content_type='application/pdf')
             response['Content-Disposition'] = f'attachment; filename="dic_report_{instance.id}.pdf"'
             return response
-        
+
         except Exception as e:
             return Response(
-                {'error': f'Ошибка при генерации PDF: {str(e)}'},
+                {'error': f'Error generating PDF: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-

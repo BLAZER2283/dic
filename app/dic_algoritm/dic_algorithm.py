@@ -117,6 +117,14 @@ class DigitalImageCorrelation:
         Оптимизировано для быстрой сходимости с средними окнами.
         """
         subset_ref = self.get_subset_interpolated(img1, x, y)
+        subset_def_initial = self.get_subset_interpolated(img2, x, y)
+        
+        # Проверяем, насколько изображения похожи без смещения
+        initial_correlation = self.zero_mean_normalized_cross_correlation(subset_ref, subset_def_initial)
+        
+        # Если корреляция очень высокая (>0.999), считаем смещение нулевым
+        if initial_correlation > 0.999:
+            return 0.0, 0.0, initial_correlation
 
         def objective(params):
             dx, dy = params
@@ -124,7 +132,8 @@ class DigitalImageCorrelation:
             correlation = self.zero_mean_normalized_cross_correlation(subset_ref, subset_def)
             return -correlation
 
-        bounds = [(-15, 15), (-15, 15)]
+        # Более узкие границы для идентичных изображений
+        bounds = [(-5, 5), (-5, 5)]
 
         result = minimize(
             objective,
@@ -137,6 +146,10 @@ class DigitalImageCorrelation:
 
         dx, dy = result.x
         correlation = -result.fun
+        
+        # Если оптимизация не улучшила результат значительно - возвращаем ноль
+        if correlation <= initial_correlation + 0.001:
+            return 0.0, 0.0, initial_correlation
 
         return dx, dy, correlation
 
@@ -195,11 +208,30 @@ class DigitalImageCorrelation:
         U_filtered[~mask] = np.nan
         V_filtered[~mask] = np.nan
 
-        U_filtered = median_filter(U_filtered, size=3, mode="constant", cval=np.nan)
-        V_filtered = median_filter(V_filtered, size=3, mode="constant", cval=np.nan)
-
+        # Порог для "нулевых" смещений (убираем numerical noise)
+        # Только очень маленькие смещения считаем шумом
+        displacement_threshold = 0.02  # пикселя - очень маленький порог
         magnitude = np.sqrt(U_filtered**2 + V_filtered**2)
-        valid_mag = magnitude[~np.isnan(magnitude)]
+        
+        # Если смещение очень маленькое И корреляция высокая - считаем его нулевым
+        small_displacement_mask = (magnitude < displacement_threshold) & (C > 0.8)
+        U_filtered[small_displacement_mask] = 0.0
+        V_filtered[small_displacement_mask] = 0.0
 
-        if len(valid_mag) > 0:
-            return U_filtered, V_filtered
+        # Применяем медианный фильтр ТОЛЬКО к точкам с ненулевыми смещениями
+        non_zero_mask = ~np.isnan(U_filtered) & (magnitude > displacement_threshold)
+        if np.any(non_zero_mask):
+            U_nonzero = U_filtered.copy()
+            V_nonzero = V_filtered.copy()
+            U_nonzero[~non_zero_mask] = np.nan
+            V_nonzero[~non_zero_mask] = np.nan
+            
+            U_filtered_nonzero = median_filter(U_nonzero, size=3, mode="constant", cval=np.nan)
+            V_filtered_nonzero = median_filter(V_nonzero, size=3, mode="constant", cval=np.nan)
+            
+            # Восстанавливаем: нулевые остаются нулями, отфильтрованные - на места
+            zero_mask = ~np.isnan(U_filtered) & (magnitude <= displacement_threshold) & (C > 0.8)
+            U_filtered[~zero_mask] = U_filtered_nonzero[~zero_mask]
+            V_filtered[~zero_mask] = V_filtered_nonzero[~zero_mask]
+
+        return U_filtered, V_filtered

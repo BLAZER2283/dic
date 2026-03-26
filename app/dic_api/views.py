@@ -1,115 +1,211 @@
+from rest_framework import viewsets, status
+from rest_framework.response import Response
+from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.parsers import MultiPartParser, FormParser
-from django.views.decorators.csrf import csrf_exempt
-from django.http import JsonResponse
-from django.views.decorators.http import require_POST
-import rest_framework
 from django.contrib.auth.models import User
-from django.contrib.auth import authenticate, login, logout
-from .models import DICAnalysis
-from .serealisers import DICAnalysisSerializer, DICAnalysisCreateSerializer
-from django.http import JsonResponse
+from django.contrib.auth import authenticate
 from django.middleware.csrf import get_token
+
+from .models import AnalysisTask, Sample
+from .serealisers import (
+    AnalysisTaskSerializer,
+    AnalysisTaskCreateSerializer,
+    SampleSerializer,
+    RegisterSerializer,
+    LoginSerializer,
+    UserSerializer,
+    ChangePasswordSerializer
+)
 from .dic_bisnes_logik.default_methods import DefaultMethodsMixin
 from .dic_bisnes_logik.logik_image import ImageActionsMixin
 from .dic_bisnes_logik.generate import PdfGenerateMixin
 
 
-class DICAnalysisViewSet(
+class AnalysisTaskViewSet(
     DefaultMethodsMixin,
     ImageActionsMixin,
     PdfGenerateMixin,
+    viewsets.ModelViewSet
 ):
     """
     ViewSet для работы с задачами DIC анализа.
-    Поддерживает создание, просмотр статуса и результатов.
     """
 
-    queryset = DICAnalysis.objects.all().order_by('-created_at')
+    queryset = AnalysisTask.objects.all().select_related(
+        'sample', 'parameters', 'images', 'results'
+    ).order_by('-created_at')
     parser_classes = (MultiPartParser, FormParser)
-    filterset_fields = ['status']
-    search_fields = ['name', 'id']
-    ordering_fields = ['created_at', 'completed_at', 'processing_time', 'max_displacement']
-    permission_classes = [rest_framework.permissions.AllowAny]
-    
-    def get_queryset(self):
-        import time
-        time.sleep(8)
-        return super().get_queryset()   
-    
+    permission_classes = [AllowAny]
+    filterset_fields = ['status', 'sample__material']
+    search_fields = ['name', 'id', 'sample__name']
+    ordering_fields = ['created_at', 'completed_at', 'processing_time']
+
     def get_serializer_class(self):
         if self.action == 'create':
-            return DICAnalysisCreateSerializer
-        return DICAnalysisSerializer
+            return AnalysisTaskCreateSerializer
+        return AnalysisTaskSerializer
 
-@require_POST
-@csrf_exempt
+    def create(self, request, *args, **kwargs):
+        """Создание новой задачи анализа."""
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        task = serializer.save()
+
+        # Запускаем обработку в отдельном потоке
+        from .dic_bisnes_logik.help_methods import HelpMethods
+        import threading
+
+        images = task.images
+        parameters = task.parameters
+
+        thread = threading.Thread(
+            target=HelpMethods()._process_dic_task,
+            args=(
+                str(task.id),
+                images.image_before.path,
+                images.image_after.path,
+                parameters.subset_size,
+                parameters.step,
+                parameters.max_iter,
+                parameters.min_correlation,
+            ),
+            daemon=True,
+        )
+        thread.start()
+
+        response_serializer = AnalysisTaskSerializer(
+            task, context={"request": request}
+        )
+        headers = self.get_success_headers(response_serializer.data)
+        return Response(response_serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+
+# ==================== Auth Views ====================
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
 def register_view(request):
-    """Регистрация нового пользователя."""
-    import json
-    try:
-        data = json.loads(request.body)
-        username = data.get('username')
-        password = data.get('password')
-    except:
-        username = request.POST.get('username')
-        password = request.POST.get('password')
+    """
+    Регистрация нового пользователя.
+    
+    После успешной регистрации возвращает JWT токены.
+    """
+    serializer = RegisterSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    
+    user = serializer.save()
+    
+    # Генерируем JWT токены
+    refresh = RefreshToken.for_user(user)
+    
+    return Response({
+        'user': UserSerializer(user).data,
+        'tokens': {
+            'refresh': str(refresh),
+            'access': str(refresh.access_token),
+        }
+    }, status=status.HTTP_201_CREATED)
 
-    if not username or not password:
-        return JsonResponse({'error': 'Username and password are required'}, status=400)
 
-    if User.objects.filter(username=username).exists():
-        return JsonResponse({'error': 'Username already exists'}, status=400)
-
-    try:
-        user = User.objects.create_user(username=username, password=password)
-        login(request, user)
-
-        return JsonResponse({
-            'user': {
-                'id': user.id,
-                'username': user.username,
-                'email': user.email
-            }
-        }, status=201)
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=400)
-
-@require_POST
-@csrf_exempt
+@api_view(['POST'])
+@permission_classes([AllowAny])
 def login_view(request):
-    """Вход пользователя."""
-    import json
-    try:
-        data = json.loads(request.body)
-        username = data.get('username')
-        password = data.get('password')
-    except:
-        username = request.POST.get('username')
-        password = request.POST.get('password')
+    """
+    Вход пользователя.
+    
+    Принимает username и password, возвращает JWT токены.
+    """
+    serializer = LoginSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    
+    user = authenticate(
+        username=serializer.validated_data['username'],
+        password=serializer.validated_data['password']
+    )
+    
+    if user is None:
+        return Response(
+            {'error': 'Неверное имя пользователя или пароль'},
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+    
+    # Генерируем JWT токены
+    refresh = RefreshToken.for_user(user)
+    
+    return Response({
+        'user': UserSerializer(user).data,
+        'tokens': {
+            'refresh': str(refresh),
+            'access': str(refresh.access_token),
+        }
+    })
 
-    if not username or not password:
-        return JsonResponse({'error': 'Username and password are required'}, status=400)
 
-    user = authenticate(username=username, password=password)
-
-    if user is not None:
-        login(request, user)
-        return JsonResponse({
-            'user': {
-                'id': user.id,
-                'username': user.username,
-                'email': user.email
-            }
-        })
-    else:
-        return JsonResponse({'error': 'Invalid credentials'}, status=401)
-
-@require_POST
-@csrf_exempt
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def logout_view(request):
-    """Выход пользователя."""
-    logout(request)
-    return JsonResponse({'message': 'Logged out successfully'})
+    """
+    Выход пользователя.
+    
+    Принимает refresh токен и добавляет его в blacklist.
+    """
+    try:
+        refresh_token = request.data.get('refresh')
+        if not refresh_token:
+            return Response(
+                {'error': 'Refresh токен обязателен'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        token = RefreshToken(refresh_token)
+        token.blacklist()
+        
+        return Response({'message': 'Успешный выход'})
+    except Exception as e:
+        return Response(
+            {'error': 'Неверный токен'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def me_view(request):
+    """
+    Получение данных текущего пользователя.
+    """
+    return Response(UserSerializer(request.user).data)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def change_password_view(request):
+    """
+    Смена пароля пользователя.
+    """
+    serializer = ChangePasswordSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    
+    user = request.user
+    
+    # Проверяем старый пароль
+    if not user.check_password(serializer.validated_data['old_password']):
+        return Response(
+            {'old_password': 'Неверный текущий пароль'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    # Устанавливаем новый пароль
+    user.set_password(serializer.validated_data['new_password'])
+    user.save()
+    
+    return Response({'message': 'Пароль успешно изменен'})
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
 def get_csrf_token(request):
-    return JsonResponse({'csrfToken': get_token(request)})
+    """Получение CSRF токена (для совместимости)."""
+    return Response({'csrfToken': get_token(request)})

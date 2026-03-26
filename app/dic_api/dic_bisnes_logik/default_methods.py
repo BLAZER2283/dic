@@ -1,43 +1,14 @@
-import threading
 import logging
-from ..serealisers import DICAnalysisSerializer
 from rest_framework.response import Response
 import os
-from rest_framework import status
-from rest_framework import viewsets
 from .help_methods import HelpMethods
 
 
-class DefaultMethodsMixin(viewsets.ModelViewSet):
+logger = logging.getLogger(__name__)
 
-    def create(self, request, *args, **kwargs):
-        """Создание новой задачи анализа."""
 
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        dic_analysis = serializer.save()
-
-        task_id = str(dic_analysis.id)
-
-        thread = threading.Thread(
-            target=HelpMethods()._process_dic_task,
-            args=(
-                task_id,
-                dic_analysis.image_before.path,
-                dic_analysis.image_after.path,
-                dic_analysis.subset_size,
-                dic_analysis.step,
-                dic_analysis.max_iter,
-                dic_analysis.min_correlation,
-            ),
-            daemon=True,
-        )
-        thread.start()
-
-        response_serializer = DICAnalysisSerializer(dic_analysis, context={"request": request})
-        headers = self.get_success_headers(response_serializer.data)
-        return Response(response_serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+class DefaultMethodsMixin:
+    """Миксин с методами по умолчанию для DIC Analysis ViewSet."""
 
     def list(self, request, *args, **kwargs):
         """Получение списка всех задач с фильтрацией."""
@@ -51,11 +22,12 @@ class DefaultMethodsMixin(viewsets.ModelViewSet):
         if date_to:
             queryset = queryset.filter(created_at__lte=date_to)
 
+        # Фильтрация по наличию результатов
         has_results = request.query_params.get("has_results")
         if has_results == "true":
-            queryset = queryset.filter(displacement_map_path__isnull=False)
+            queryset = queryset.filter(results__displacement_map_path__isnull=False)
         elif has_results == "false":
-            queryset = queryset.filter(displacement_map_path__isnull=True)
+            queryset = queryset.filter(results__displacement_map_path__isnull=True)
 
         page = self.paginate_queryset(queryset)
         if page is not None:
@@ -69,22 +41,4 @@ class DefaultMethodsMixin(viewsets.ModelViewSet):
         """Получение деталей задачи с абсолютными URL."""
         instance = self.get_object()
         serializer = self.get_serializer(instance)
-        data = serializer.data
-
-        if instance.displacement_map_path:
-            from django.conf import settings
-
-            full_path = os.path.join(settings.MEDIA_ROOT, instance.displacement_map_path)
-            if os.path.exists(full_path):
-                data["displacement_map_url"] = request.build_absolute_uri(
-                    f"/media/results/{os.path.basename(instance.displacement_map_path)}"
-                )
-
-        if instance.image_before:
-            data["image_before_url"] = request.build_absolute_uri(instance.image_before.url)
-
-        if instance.image_after:
-            data["image_after_url"] = request.build_absolute_uri(instance.image_after.url)
-
-        return Response(data)
-
+        return Response(serializer.data)

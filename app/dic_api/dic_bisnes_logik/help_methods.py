@@ -1,7 +1,10 @@
 import logging
-
+from django.utils import timezone
 from .sync_processor import SyncDICProcessor
-from ..models import DICAnalysis
+from ..models import AnalysisTask, AnalysisImages, AnalysisResults
+
+
+logger = logging.getLogger(__name__)
 
 
 class HelpMethods:
@@ -27,47 +30,54 @@ class HelpMethods:
 
         except Exception:
             import traceback
-
             traceback.print_exc()
 
     def _update_task_results(self, task_id, results):
         """
         Обновление результатов задачи в базе данных.
         """
-        from django.utils import timezone
-
         try:
-            dic_analysis = DICAnalysis.objects.get(id=task_id)
+            # Получаем задачу
+            task = AnalysisTask.objects.get(id=task_id)
 
             if results["status"] == "completed":
-                dic_analysis.status = DICAnalysis.Status.COMPLETED
+                task.status = AnalysisTask.Status.COMPLETED
+                task.completed_at = timezone.now()
 
-                if "image_paths" in results:
-                    image_paths = results["image_paths"]
-                    dic_analysis.original_image_path = image_paths.get("original_image", "")
-                    dic_analysis.deformed_image_path = image_paths.get("deformed_image", "")
-                    dic_analysis.displacement_map_path = image_paths.get("displacement_map", "")
+                # Обновляем изображения (AnalysisImages)
+                if hasattr(task, 'images'):
+                    images = task.images
+                    if "image_paths" in results:
+                        image_paths = results["image_paths"]
+                        images.original_image_path = image_paths.get("original_image", "")
+                        images.deformed_image_path = image_paths.get("deformed_image", "")
+                        images.displacement_map_path = image_paths.get("displacement_map", "")
+                        images.save()
 
-                if "statistics" in results:
-                    stats = results["statistics"]
-                    dic_analysis.mean_displacement = stats.get("mean_displacement", 0)
-                    dic_analysis.max_displacement = stats.get("max_displacement", 0)
-                    dic_analysis.median_displacement = stats.get("median_displacement", 0)
-                    dic_analysis.std_displacement = stats.get("std_displacement", 0)
-                    dic_analysis.correlation_quality = stats.get("correlation_quality", 0)
-                    dic_analysis.reliable_points_percentage = stats.get("reliable_points_percentage", 0)
-                    dic_analysis.processing_time = stats.get("processing_time_seconds", 0)
+                # Обновляем результаты (AnalysisResults)
+                if hasattr(task, 'results'):
+                    results_obj = task.results
+                    if "statistics" in results:
+                        stats = results["statistics"]
+                        results_obj.mean_displacement = stats.get("mean_displacement", 0)
+                        results_obj.max_displacement = stats.get("max_displacement", 0)
+                        results_obj.median_displacement = stats.get("median_displacement", 0)
+                        results_obj.std_displacement = stats.get("std_displacement", 0)
+                        results_obj.correlation_quality = stats.get("correlation_quality", 0)
+                        results_obj.reliable_points_percentage = stats.get("reliable_points_percentage", 0)
+                        results_obj.result_json = results
+                        results_obj.save()
 
-                dic_analysis.result_json = results
+                    # Обновляем время обработки в задаче
+                    task.processing_time = stats.get("processing_time_seconds", 0)
+                    task.save()
 
             else:
-                dic_analysis.status = DICAnalysis.Status.ERROR
-                dic_analysis.error_message = results.get("error", "Неизвестная ошибка")
-
-            dic_analysis.completed_at = timezone.now()
-            dic_analysis.save()
+                task.status = AnalysisTask.Status.ERROR
+                task.error_message = results.get("error", "Неизвестная ошибка")
+                task.completed_at = timezone.now()
+                task.save()
 
         except Exception as e:
-            logger = logging.getLogger(__name__)
             logger.exception("Ошибка при обновлении задачи %s: %s", task_id, e)
     

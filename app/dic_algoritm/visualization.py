@@ -32,16 +32,27 @@ def save_displacement_map_sync(
     fig, ax = plt.subplots(figsize=(12, 10))
 
     magnitude = np.sqrt(U**2 + V**2)
+    
+    # Определяем максимальное смещение для цветовой шкалы
+    max_mag = np.nanmax(magnitude)
+    if max_mag < 0.1 or np.isnan(max_mag):
+        max_mag = 1.0
+
+    # Используем цветовую схему: синий = 0 смещение, красный = большое смещение
+    from matplotlib.colors import LinearSegmentedColormap
+    colors = [(0.0, 0.0, 1.0), (0.0, 1.0, 1.0), (1.0, 1.0, 0.0), (1.0, 0.0, 0.0)]
+    n_bins = 100
+    cmap = LinearSegmentedColormap.from_list('blue_to_red', colors, N=n_bins)
 
     ax.imshow(img1, cmap="gray", alpha=0.2, extent=[0, img1.shape[1], img1.shape[0], 0])
 
     im = ax.imshow(
         magnitude,
-        cmap="hot_r",
+        cmap=cmap,
         alpha=0.85,
         extent=[x_coords[0], x_coords[-1], y_coords[-1], y_coords[0]],
         vmin=0,
-        vmax=np.nanmax(magnitude),
+        vmax=max_mag,
     )
 
     ax.set_title(
@@ -107,6 +118,12 @@ def save_three_images_sync(
     Синхронное сохранение трех изображений.
     """
     magnitude = np.sqrt(U**2 + V**2)
+    
+    # Определяем максимальное смещение для цветовой шкалы
+    max_mag = np.nanmax(magnitude)
+    # Если все смещения нулевые или очень маленькие
+    if max_mag < 0.1 or np.isnan(max_mag):
+        max_mag = 1.0  # Устанавливаем разумный максимум для цветовой шкалы
 
     fig1, ax1 = plt.subplots(figsize=(8, 6))
     ax1.imshow(img1, cmap="gray")
@@ -132,16 +149,24 @@ def save_three_images_sync(
 
     fig3, ax3 = plt.subplots(figsize=(10, 8))
 
+    # Используем цветовую схему: синий = 0 смещение, красный = большое смещение
+    # Создаем кастомную colormap
+    from matplotlib.colors import LinearSegmentedColormap
+    
+    colors = [(0.0, 0.0, 1.0), (0.0, 1.0, 1.0), (1.0, 1.0, 0.0), (1.0, 0.0, 0.0)]  # синий -> голубой -> желтый -> красный
+    n_bins = 100
+    cmap = LinearSegmentedColormap.from_list('blue_to_red', colors, N=n_bins)
+
     im = ax3.imshow(
         magnitude,
-        cmap="hot_r",
+        cmap=cmap,
         extent=[x_coords[0], x_coords[-1], y_coords[-1], y_coords[0]],
         vmin=0,
-        vmax=np.nanmax(magnitude),
+        vmax=max_mag,
     )
 
     ax3.set_title(
-        "Карта смещений\n(красный - большие смещения, белый - малые)",
+        "Карта смещений\n(синий - нет смещений, красный - большие смещения)",
         fontsize=12,
         fontweight="bold",
     )
