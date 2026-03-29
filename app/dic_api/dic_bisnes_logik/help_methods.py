@@ -24,6 +24,7 @@ class HelpMethods:
                 subset_size=subset_size,
                 step=step,
                 max_iter=max_iter,
+                min_correlation=min_correlation,
             )
 
             self._update_task_results(task_id, results)

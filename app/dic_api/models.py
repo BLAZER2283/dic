@@ -145,4 +145,4 @@ class AnalysisResults(models.Model):
 
     def __str__(self):
         return f"Результаты для {self.task.name}"
-    
+

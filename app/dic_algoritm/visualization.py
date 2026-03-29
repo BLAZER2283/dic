@@ -46,8 +46,11 @@ def save_displacement_map_sync(
 
     ax.imshow(img1, cmap="gray", alpha=0.2, extent=[0, img1.shape[1], img1.shape[0], 0])
 
+    # Маскируем NaN для прозрачного отображения
+    magnitude_masked = np.ma.masked_invalid(magnitude)
+
     im = ax.imshow(
-        magnitude,
+        magnitude_masked,
         cmap=cmap,
         alpha=0.85,
         extent=[x_coords[0], x_coords[-1], y_coords[-1], y_coords[0]],
@@ -152,13 +155,16 @@ def save_three_images_sync(
     # Используем цветовую схему: синий = 0 смещение, красный = большое смещение
     # Создаем кастомную colormap
     from matplotlib.colors import LinearSegmentedColormap
-    
+
     colors = [(0.0, 0.0, 1.0), (0.0, 1.0, 1.0), (1.0, 1.0, 0.0), (1.0, 0.0, 0.0)]  # синий -> голубой -> желтый -> красный
     n_bins = 100
     cmap = LinearSegmentedColormap.from_list('blue_to_red', colors, N=n_bins)
 
+    # Маскируем NaN для прозрачного отображения
+    magnitude_masked = np.ma.masked_invalid(magnitude)
+
     im = ax3.imshow(
-        magnitude,
+        magnitude_masked,
         cmap=cmap,
         extent=[x_coords[0], x_coords[-1], y_coords[-1], y_coords[0]],
         vmin=0,

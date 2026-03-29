@@ -82,7 +82,6 @@ class AnalysisTaskViewSet(
         return Response(response_serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
-# ==================== Auth Views ====================
 
 @api_view(['POST'])
 @permission_classes([AllowAny])

@@ -39,6 +39,7 @@ class DICProcessorAPI:
         subset_size: int = 25,
         step: int = 12,
         max_iter: int = 35,
+        min_correlation: float = 0.4,
     ) -> Dict[str, Any]:
         """
         Асинхронная обработка теста с двумя изображениями.
@@ -58,7 +59,7 @@ class DICProcessorAPI:
                 img1, img2
             )
 
-            U_filtered, V_filtered = await dic.post_process_displacements(U, V, C, min_correlation=0.4)
+            U_filtered, V_filtered = await dic.post_process_displacements(U, V, C, min_correlation=min_correlation)
 
             loop = asyncio.get_event_loop()
             image_paths = await loop.run_in_executor(
@@ -102,7 +103,7 @@ class DICProcessorAPI:
                     "subset_size": subset_size,
                     "step": step,
                     "max_iter": max_iter,
-                    "min_correlation": 0.4,
+                    "min_correlation": min_correlation,
                 },
                 "timestamp": datetime.datetime.now().isoformat(),
             }
@@ -130,6 +131,7 @@ class DICProcessorAPI:
         subset_size: int = 27,
         step: int = 13,
         max_iter: int = 40,
+        min_correlation: float = 0.4,
     ) -> Dict[str, Any]:
         """
         Асинхронная обработка теста из файлов изображений.
@@ -139,7 +141,7 @@ class DICProcessorAPI:
             img1, img2 = await self._load_images_async(img1_path, img2_path)
 
             return await self.process_test_async(
-                test_id, img1, img2, subset_size=subset_size, step=step, max_iter=max_iter
+                test_id, img1, img2, subset_size=subset_size, step=step, max_iter=max_iter, min_correlation=min_correlation
             )
 
         except Exception as e:

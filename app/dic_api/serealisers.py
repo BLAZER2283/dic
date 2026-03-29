@@ -4,7 +4,6 @@ from .models import Sample, AnalysisTask, AnalysisParameters, AnalysisImages, An
 import os
 
 
-# ==================== Auth Serializers ====================
 
 class RegisterSerializer(serializers.ModelSerializer):
     """Сериализатор для регистрации пользователя."""
@@ -71,7 +70,6 @@ class ChangePasswordSerializer(serializers.Serializer):
         return attrs
 
 
-# ==================== Sample Serializer ====================
 
 class SampleSerializer(serializers.ModelSerializer):
     """Сериализатор для модели образца."""
@@ -85,7 +83,6 @@ class SampleSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at', 'updated_at']
 
 
-# ==================== AnalysisParameters Serializer ====================
 
 class AnalysisParametersSerializer(serializers.ModelSerializer):
     """Сериализатор для параметров анализа."""
@@ -110,7 +107,6 @@ class AnalysisParametersSerializer(serializers.ModelSerializer):
         return value
 
 
-# ==================== AnalysisImages Serializer ====================
 
 class AnalysisImagesSerializer(serializers.ModelSerializer):
     """Сериализатор для изображений."""
@@ -180,7 +176,6 @@ class AnalysisImagesSerializer(serializers.ModelSerializer):
         return None
 
 
-# ==================== AnalysisResults Serializer ====================
 
 class AnalysisResultsSerializer(serializers.ModelSerializer):
     """Сериализатор для результатов анализа."""
@@ -196,7 +191,6 @@ class AnalysisResultsSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at']
 
 
-# ==================== AnalysisTask Serializers ====================
 
 class AnalysisTaskCreateSerializer(serializers.ModelSerializer):
     """Сериализатор для создания задачи анализа."""
