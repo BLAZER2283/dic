@@ -21,6 +21,7 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",
     "corsheaders",
     "dic_api",
+    'ucrp',
     "drf_spectacular",
     "drf_spectacular_sidecar",
 ]

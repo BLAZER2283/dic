@@ -280,8 +280,8 @@
                       label="Min Correlation"
                       type="number"
                       step="0.01"
-                      :rules="[rules.required, rules.minValue(0), rules.maxValue(1)]"
-                      hint="Minimum correlation coefficient"
+                      :rules="[rules.correlationValue]"
+                      hint="Minimum correlation coefficient (0-1)"
                       persistent-hint
                     />
                   </v-col>
@@ -453,6 +453,11 @@ const rules = {
   },
   minValue: (min: number) => (value: number) => value >= min || `Minimum value is ${min}`,
   maxValue: (max: number) => (value: number) => value <= max || `Maximum value is ${max}`,
+  correlationValue: (value: number) => {
+    if (value === undefined || value === null) return 'Required'
+    if (value < 0 || value > 1) return 'Must be between 0 and 1'
+    return true
+  },
 }
 
 // Computed
@@ -573,11 +578,13 @@ const submitForm = async () => {
   }
 
   console.log('DEBUG: All validation passed, starting analysis creation')
+  console.log('DEBUG: min_correlation value being sent:', formData.min_correlation)
   creating.value = true
   try {
     console.log('DEBUG: Calling analysisStore.createAnalysis')
     const analysis = await analysisStore.createAnalysis(formData)
     console.log('DEBUG: Analysis created successfully:', analysis)
+    console.log('DEBUG: Analysis min_correlation from server:', analysis.min_correlation)
     createdAnalysis.value = analysis
     showSuccessDialog.value = true
 

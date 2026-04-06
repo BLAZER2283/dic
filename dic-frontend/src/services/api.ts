@@ -114,7 +114,10 @@ class ApiService {
     if (data.subset_size) formData.append('subset_size', data.subset_size.toString());
     if (data.step) formData.append('step', data.step.toString());
     if (data.max_iter) formData.append('max_iter', data.max_iter.toString());
-    if (data.min_correlation) formData.append('min_correlation', data.min_correlation.toString());
+    // Always include min_correlation if it's defined (even if 0)
+    if (data.min_correlation !== undefined && data.min_correlation !== null) {
+      formData.append('min_correlation', data.min_correlation.toString());
+    }
 
     // Sample information
     if (data.sample_name) formData.append('sample_name', data.sample_name);

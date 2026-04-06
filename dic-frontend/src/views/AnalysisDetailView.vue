@@ -439,6 +439,9 @@ const loadAnalysis = async () => {
 
   try {
     analysis.value = await analysisStore.fetchAnalysis(id)
+    console.log('DEBUG: Loaded analysis:', analysis.value)
+    console.log('DEBUG: Min correlation:', analysis.value?.min_correlation)
+    console.log('DEBUG: Displacement map URL:', analysis.value?.displacement_map_url)
   } catch (err: any) {
     error.value = err.response?.data?.detail || 'Failed to load analysis'
     console.error('Error loading analysis:', err)
