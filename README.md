@@ -25,7 +25,18 @@ docker-compose up --build -d
 # Проверьте статус
 docker-compose ps
 ```
-
+Запуск тестов 
+1 pytest dic/app/ucrp/tests.py -v
+    Флаги:
+     - -v — подробный вывод
+     - --tb=short — короткий traceback
+     - -k fraction — только тесты с "fraction"
+     - -x — остановить на первой ошибке
+python manage.py test ucrp.tests.TestDjangoModels -v 2
+  Флаги:
+     - -v 2 — подробный вывод
+     - --keepdb — не удалять тестовую БД
+     - --parallel — параллельный запуск
 ### Доступ к приложению
 - **🎯 Главное приложение:** http://localhost:8080
 - **🔧 Django Admin:** http://localhost:8000/admin/

@@ -110,8 +110,8 @@ class PlasmaOptimizer:
             raise ValueError("диаметр и длина должны быть положительными числами.")
         R = diameter / 2000.0
         
-        N_segments = ceil(length / 50)
-        x_grid = np.linspace(0, length, N_segments + 1)
+        N_segments = ceil(length / 50) + 1
+        x_grid = np.linspace(0, length, N_segments)
         
         return R, N_segments, x_grid
     
@@ -159,8 +159,9 @@ class PlasmaOptimizer:
             a = plasma_offset / (diameter / 2)
             t = T_profile[i]
             temp_factor = np.exp(-(t - self.material["t_target"])**2 / (2 * 150**2))
-            r = diameter / 2
-            d_g = 2.3e5 * u /np.sqrt(p * omega**2 *r) * (1 + 0.018 * (I_target - 1390)) * (1 - 0.2 * a) * temp_factor
+            r = diameter / 2000.0
+            d_g = 1.17e9 * u / np.sqrt(p * omega**2 * r) * (1 + 0.018 * (I_target - 1390)) * (1 - 0.2 * a) * temp_factor
+            
             d_g_profile.append(d_g)
         return np.array(d_g_profile)
         
@@ -442,21 +443,4 @@ class PlasmaOptimizer:
 
         return self
 
-a = PlasmaOptimizer(
-    material_type="ОТ4",
-    diameter=20,
-    length=700,
-    I_target=1500,
-    n_electrode=30000,
-    plasma_offset=10,
-    plasma_angle=85,
-    gas_flow=2.3,
-    pusher_speed=50,
-    vibration_level=2.0,
-    n_ogark=30000,
-    time_from_last_cleaning=5,
-    roller_wear_mm=1.2,
 
-    material_choices=MATERIAL_CHOICES,
-    material_properties=MATERIAL_PROPERTIES
-)
