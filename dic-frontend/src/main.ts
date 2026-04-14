@@ -1,6 +1,10 @@
 import { createApp } from 'vue'
+import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
+
+import { useAuthStore } from './auth/stores/auth.store'
+import { setupAuthGuard } from './auth/plugin'
 
 import 'vuetify/styles'
 import { createVuetify } from 'vuetify'
@@ -18,7 +22,16 @@ const vuetify = createVuetify({
 
 const app = createApp(App)
 
-app.use(router)
+const pinia = createPinia()
+app.use(pinia)
 app.use(vuetify)
 
-app.mount('#app')
+// Инициализация auth ДО установки роутера
+const authStore = useAuthStore()
+
+authStore.initAuth().then(() => {
+  // Установка guard для защищенных маршрутов
+  setupAuthGuard(router)
+  app.use(router)
+  app.mount('#app')
+})

@@ -66,11 +66,29 @@ export const useAnalysisStore = defineStore('analysis', () => {
       if (hasResultsFilter.value !== null) params.has_results = hasResultsFilter.value;
 
       const response = await apiService.getAnalyses(params);
-      analyses.value = response.data.results;
-      totalCount.value = response.data.count;
-      currentPage.value = page;
-      hasNextPage.value = !!response.data.next;
-      hasPreviousPage.value = !!response.data.previous;
+
+      const data = response.data;
+
+      // API may return either a plain array or a paginated object { count, results, next, previous }
+      if (Array.isArray(data)) {
+        analyses.value = data;
+        totalCount.value = data.length;
+        currentPage.value = page;
+        hasNextPage.value = false;
+        hasPreviousPage.value = false;
+      } else if (data && Array.isArray(data.results)) {
+        analyses.value = data.results;
+        totalCount.value = typeof data.count === 'number' ? data.count : data.results.length;
+        currentPage.value = page;
+        hasNextPage.value = !!data.next;
+        hasPreviousPage.value = !!data.previous;
+      } else {
+        analyses.value = [];
+        totalCount.value = 0;
+        currentPage.value = page;
+        hasNextPage.value = false;
+        hasPreviousPage.value = false;
+      }
     } catch (err: any) {
       error.value = err.response?.data?.detail || 'Failed to fetch analyses';
       console.error('Error fetching analyses:', err);

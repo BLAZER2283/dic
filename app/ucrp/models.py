@@ -1,6 +1,6 @@
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
-
+from django.contrib.auth import get_user_model
 
 # Справочник материалов
 MATERIAL_CHOICES = [
@@ -37,7 +37,12 @@ class EPGCalculation(models.Model):
     Основной расчёт ЭПГ (электронно-плазменного гранулирования).
     Связывает все параметры, результаты и рекомендации.
     """
-
+    user = models.ForeignKey(
+        get_user_model(),
+        on_delete=models.CASCADE,
+        related_name="epg_calculations",
+        verbose_name="Пользователь"
+    )
     material = models.CharField(
         max_length=20,
         choices=MATERIAL_CHOICES,

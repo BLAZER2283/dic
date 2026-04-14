@@ -20,11 +20,18 @@ from .serealisation import (
     EPGInternalDataSerializer
     )
 from ucrp.logik.plasma_optimizer import PlasmaOptimizer
-
+from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
 class EPGCalculationViewSet(viewsets.ModelViewSet):
     queryset = EPGCalculation.objects.all()
     serializer_class = EPGCalculationSerializer
     
+    def get_permissions(self):
+        if self.request.method in ['POST']:
+            return [IsAuthenticated()]
+        elif self.request.method in ['put', 'patch', 'delete']:
+            return [IsAdminUser()]
+        return [AllowAny()]
+
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)

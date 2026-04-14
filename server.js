@@ -12,7 +12,7 @@ const server = http.createServer((req, res) => {
     console.log("Proxying API request to backend:", req.url);
 
     const options = {
-      hostname: "backend",
+      hostname: "localhost",
       port: 8000,
       path: req.url,
       method: req.method,
@@ -36,12 +36,12 @@ const server = http.createServer((req, res) => {
   }
 
   // Serve static files
-  let filePath = path.join(__dirname, "dist", req.url === "/" ? "index.html" : req.url);
+  let filePath = path.join(__dirname, "dic-frontend", "dist", req.url === "/" ? "index.html" : req.url);
 
   console.log("Serving static file:", req.url, "->", filePath);
 
   if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
-    filePath = path.join(__dirname, "dist", "index.html");
+    filePath = path.join(__dirname, "dic-frontend", "dist", "index.html");
     console.log("Serving index.html instead:", filePath);
   }
 
@@ -73,5 +73,5 @@ const server = http.createServer((req, res) => {
 server.listen(port, () => {
   console.log(`Frontend server running at http://localhost:${port}`);
   console.log(`API requests will be proxied to backend service`);
-  console.log("Serving files from:", path.join(__dirname, "dist"));
+  console.log("Serving files from:", path.join(__dirname, "dic-frontend", "dist"));
 });

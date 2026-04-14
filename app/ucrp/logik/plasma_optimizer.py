@@ -446,63 +446,63 @@ class PlasmaOptimizer:
 
 
 
-a = PlasmaOptimizer(
-    material_type="ОТ4",
-    diameter=20,
-    length=700,
-    I_target=1500,
-    n_electrode=30000,
-    plasma_offset=10,
-    plasma_angle=85,
-    gas_flow=2.3,
-    pusher_speed=50,
-    vibration_level=2.0,
-    n_ogark=30000,
-    time_from_last_cleaning=5,
-    roller_wear_mm=1.2,
+# a = PlasmaOptimizer(
+#     material_type="ОТ4",
+#     diameter=20,
+#     length=700,
+#     I_target=1500,
+#     n_electrode=30000,
+#     plasma_offset=10,
+#     plasma_angle=85,
+#     gas_flow=2.3,
+#     pusher_speed=50,
+#     vibration_level=2.0,
+#     n_ogark=30000,
+#     time_from_last_cleaning=5,
+#     roller_wear_mm=1.2,
 
-    material_choices=MATERIAL_CHOICES,
-    material_properties=MATERIAL_PROPERTIES
-)
+#     material_choices=MATERIAL_CHOICES,
+#     material_properties=MATERIAL_PROPERTIES
+# )
 
-a.run_all()
+# a.run_all()
 
-print(a.mean_loss)
-print(a.frac)
-print(a.recommendations)
-print("=== MATERIAL ===")
-print(a.material)
+# print(a.mean_loss)
+# print(a.frac)
+# print(a.recommendations)
+# print("=== MATERIAL ===")
+# print(a.material)
 
-print("\n=== GEOMETRY ===")
-print("radius:", a.radius)
-print("segments:", a.n_segments)
+# print("\n=== GEOMETRY ===")
+# print("radius:", a.radius)
+# print("segments:", a.n_segments)
 
-print("\n=== TEMPERATURE PROFILE ===")
-print(a.T_profile)
+# print("\n=== TEMPERATURE PROFILE ===")
+# print(a.T_profile)
 
-print("\n=== SPEED PROFILE ===")
-print(a.n_profile)
+# print("\n=== SPEED PROFILE ===")
+# print(a.n_profile)
 
-print("\n=== LOSSES ===")
-print("mean_loss:", a.mean_loss)
-print("loss_profile:", a.losses_profile)
+# print("\n=== LOSSES ===")
+# print("mean_loss:", a.mean_loss)
+# print("loss_profile:", a.losses_profile)
 
-print("\n=== GRAIN SIZE ===")
-print("mean:", a.d_mean)
-print("profile:", a.d_g_profile)
+# print("\n=== GRAIN SIZE ===")
+# print("mean:", a.d_mean)
+# print("profile:", a.d_g_profile)
 
-print("\n=== FRACTION 100-140 ===")
-print(a.frac)
+# print("\n=== FRACTION 100-140 ===")
+# print(a.frac)
 
-print("\n=== STABILITY ===")
-print(a.stability)
+# print("\n=== STABILITY ===")
+# print(a.stability)
 
-print("\n=== OPTIMAL CURRENT ===")
-print(a.optimal_I_by_length)
+# print("\n=== OPTIMAL CURRENT ===")
+# print(a.optimal_I_by_length)
 
-print("\n=== WARNINGS ===")
-print(a.warnings)
+# print("\n=== WARNINGS ===")
+# print(a.warnings)
 
-print("\n=== RECOMMENDATIONS ===")
-for r in a.recommendations:
-    print("-", r)
+# print("\n=== RECOMMENDATIONS ===")
+# for r in a.recommendations:
+#     print("-", r)

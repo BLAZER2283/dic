@@ -7,6 +7,7 @@ import type {
   DICAnalysisListResponse,
   CSRFToken
 } from '@/types/api';
+import { useAuthStore } from '@/auth/stores/auth.store';
 
 class ApiService {
   private api: AxiosInstance;
@@ -20,8 +21,14 @@ class ApiService {
       },
     });
 
-    // Add request interceptor to include CSRF token
+    // Add request interceptor to include CSRF token and Bearer token
     this.api.interceptors.request.use(async (config) => {
+      // Add Bearer token if available - используем auth store
+      const authStore = useAuthStore();
+      if (authStore.accessToken) {
+        config.headers['Authorization'] = `Bearer ${authStore.accessToken}`;
+      }
+
       if (config.method && ['post', 'put', 'patch', 'delete'].includes(config.method.toLowerCase())) {
         try {
           console.log('DEBUG: Getting CSRF token for request:', config.url);
@@ -49,8 +56,10 @@ class ApiService {
       (response) => response,
       (error) => {
         if (error.response?.status === 401) {
-          // Handle unauthorized access
-          console.error('Unauthorized access');
+          // Handle unauthorized access - используем auth store для очистки
+          const authStore = useAuthStore();
+          authStore.clearAuth();
+          window.location.href = '/login';
         }
         return Promise.reject(error);
       }

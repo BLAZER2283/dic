@@ -3,29 +3,44 @@
     <h1>Dashboard</h1>
     <p>Welcome to DIC Analyzer Dashboard!</p>
 
-    <div class="stats-grid">
+    <div v-if="loading" class="loading">
+      <p>Загрузка статистики...</p>
+    </div>
+
+    <div v-else-if="error" class="error">
+      <p>{{ error }}</p>
+    </div>
+
+    <div v-else-if="!stats || stats.overview.total === 0" class="empty-state">
+      <p>Пока нет анализов. Создайте первый!</p>
+      <button @click="$router.push('/analyses/create')" class="btn-primary">
+        Create New Analysis
+      </button>
+    </div>
+
+    <div v-else class="stats-grid">
       <div class="stat-card">
         <h3>Total Tasks</h3>
-        <div class="stat-number">{{ stats?.overview?.total || 0 }}</div>
+        <div class="stat-number">{{ stats.overview.total }}</div>
       </div>
 
       <div class="stat-card">
         <h3>Completed</h3>
-        <div class="stat-number">{{ stats?.overview?.completed || 0 }}</div>
+        <div class="stat-number">{{ stats.overview.completed }}</div>
       </div>
 
       <div class="stat-card">
         <h3>Processing</h3>
-        <div class="stat-number">{{ stats?.overview?.processing || 0 }}</div>
+        <div class="stat-number">{{ stats.overview.processing }}</div>
       </div>
 
       <div class="stat-card">
         <h3>Errors</h3>
-        <div class="stat-number">{{ stats?.overview?.error || 0 }}</div>
+        <div class="stat-number">{{ stats.overview.error }}</div>
       </div>
     </div>
 
-    <div class="actions">
+    <div v-if="stats && stats.overview.total > 0" class="actions">
       <button @click="$router.push('/analyses/create')" class="btn-primary">
         Create New Analysis
       </button>
@@ -37,37 +52,58 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import { apiService } from '@/services/api'
+import type { DICAnalysis } from '@/types/api'
 
-const stats = ref(null)
+const analyses = ref<DICAnalysis[]>([])
+const loading = ref(true)
+const error = ref<string | null>(null)
 
-onMounted(() => {
-  console.log('Dashboard component mounted successfully!')
-  // Временно отключим API запросы для тестирования
-  stats.value = {
+const stats = computed(() => {
+  const total = analyses.value.length
+  const completed = analyses.value.filter(a => a.status === 'completed').length
+  const processing = analyses.value.filter(a => a.status === 'processing').length
+  const pending = analyses.value.filter(a => a.status === 'pending').length
+  const errors = analyses.value.filter(a => a.status === 'error').length
+  const cancelled = analyses.value.filter(a => a.status === 'cancelled').length
+  
+  return {
     overview: {
-      total: 5,
-      completed: 3,
-      processing: 1,
-      pending: 0,
-      error: 1,
-      cancelled: 0,
-      success_rate: 60
-    },
-    processing_stats: {
-      avg_processing_time: 45.2,
-      total_processing_time: 135.6
-    },
-    deformation_stats: {
-      avg_max_displacement: 0.023,
-      avg_mean_displacement: 0.015
-    },
-    recent_tasks: [],
-    timeline: {
-      last_24_hours: 2,
-      last_week: 5,
-      last_month: 12
+      total,
+      completed,
+      processing,
+      pending,
+      error: errors,
+      cancelled,
+      success_rate: total > 0 ? Math.round((completed / total) * 100) : 0
     }
+  }
+})
+
+onMounted(async () => {
+  try {
+    loading.value = true
+    const response = await apiService.getAnalyses({ page_size: 1000 })
+    console.log('API Response:', response.data)
+    
+    // API может возвращать массив или объект { results: [...] }
+    if (Array.isArray(response.data)) {
+      analyses.value = response.data
+    } else if (response.data.results) {
+      analyses.value = response.data.results
+    } else {
+      analyses.value = []
+    }
+    
+    console.log('Analyses count:', analyses.value.length)
+    console.log('First analysis:', analyses.value[0])
+  } catch (err: any) {
+    console.error('Failed to fetch analyses:', err)
+    error.value = 'Не удалось загрузить данные: ' + (err.message || err)
+    analyses.value = []
+  } finally {
+    loading.value = false
   }
 })
 </script>
@@ -77,6 +113,23 @@ onMounted(() => {
   padding: 20px;
   max-width: 1200px;
   margin: 0 auto;
+}
+
+.loading, .error, .empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  margin: 20px 0;
+  background: #f5f5f5;
+  border-radius: 8px;
+}
+
+.error {
+  color: #d32f2f;
+  background: #ffebee;
+}
+
+.empty-state {
+  color: #666;
 }
 
 .stats-grid {

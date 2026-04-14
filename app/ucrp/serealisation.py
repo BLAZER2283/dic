@@ -66,6 +66,7 @@ class EPGInternalDataSerializer(serializers.ModelSerializer):
 
 class EPGCalculationSerializer(serializers.ModelSerializer):
     # вложенные объекты (только для чтения) — записи создаются/обновляются отдельно
+    user = serializers.PrimaryKeyRelatedField(read_only=True)
     auxiliary_params = EPGAuxiliaryParametersSerializer(read_only=True)
     results = EPGResultsSerializer(read_only=True)
     warnings_data = EPGWarningsSerializer(read_only=True)
@@ -75,6 +76,7 @@ class EPGCalculationSerializer(serializers.ModelSerializer):
         model = EPGCalculation
         fields = (
             "id",
+            'user',
             "material",
             "diameter",
             "length",
