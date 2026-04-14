@@ -18,4 +18,5 @@ reportlab==4.2.5
 dj-database-url==2.3.0
 django-redis
 drf-spectacular[sidecar]
+python-dotenv==1.0.1
 pytest

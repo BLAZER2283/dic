@@ -2,6 +2,9 @@
 .git
 .gitignore
 
+# Environment
+.env
+
 # Python
 __pycache__
 *.pyc

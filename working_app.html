@@ -145,11 +145,24 @@
                             credentials: 'include'
                         });
                         const data = await response.json();
-                        if (response.ok) {
-                            this.analyses = data.results.filter(analysis =>
-                                analysis.status === 'completed' || analysis.status_display === 'Завершено'
-                            );
+                        console.log('API Response:', data); // Debug log
+                        
+                        // Handle both paginated and non-paginated responses
+                        let analysesList = [];
+                        if (data.results) {
+                            analysesList = data.results;
+                        } else if (Array.isArray(data)) {
+                            analysesList = data;
                         }
+                        
+                        console.log('Analyses before filter:', analysesList);
+                        
+                        this.analyses = analysesList.filter(analysis => {
+                            console.log(`Analysis ${analysis.id}: status="${analysis.status}", status_display="${analysis.status_display}"`);
+                            return analysis.status === 'completed';
+                        });
+                        
+                        console.log('Analyses after filter:', this.analyses);
                     } catch (error) {
                         console.error('Load analyses error:', error);
                     }

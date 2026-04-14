@@ -1,12 +1,16 @@
 from pathlib import Path
 import os
+from dotenv import load_dotenv
+
+# Load .env file
+load_dotenv(os.path.join(Path(__file__).resolve().parent.parent.parent, '.env'))
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-SECRET_KEY = "django-insecure-g@(6me7w)i=0ihy8wukuf)+$@4l=!g5d43x%7gkg-)$6-rftx-"
+SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-g@(6me7w)i=0ihy8wukuf)+$@4l=!g5d43x%7gkg-)$6-rftx-")
 
-DEBUG = True
+DEBUG = os.getenv("DEBUG", "True").lower() in ("true", "1", "yes")
 
 ALLOWED_HOSTS = ["*"]
 
@@ -78,7 +82,7 @@ CSRF_TRUSTED_ORIGINS = [
 CORS_ALLOW_METHODS = ["DELETE", "GET", "OPTIONS", "PATCH", "POST", "PUT"]
 
 
-DATABASE_URL = os.getenv("DATABASE_URL") or os.environ.get("DATABASE_URL")
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 if DATABASE_URL:
     import dj_database_url
@@ -88,11 +92,11 @@ else:
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
-            "NAME": "dic",
-            "USER": "asa",
-            "PASSWORD": "23449365Afg",
-            "HOST": "localhost",
-            "PORT": "5432",
+            "NAME": os.getenv("POSTGRES_DB", "dic"),
+            "USER": os.getenv("POSTGRES_USER", "asa"),
+            "PASSWORD": os.getenv("POSTGRES_PASSWORD", ""),
+            "HOST": os.getenv("POSTGRES_HOST", "localhost"),
+            "PORT": os.getenv("POSTGRES_PORT", "5432"),
         }
     }
 
@@ -122,8 +126,8 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": "24:00:00",  # 24 часа
-    "REFRESH_TOKEN_LIFETIME": "7 days",    # 7 дней
+    "ACCESS_TOKEN_LIFETIME": os.getenv("JWT_ACCESS_TOKEN_LIFETIME", "24:00:00"),
+    "REFRESH_TOKEN_LIFETIME": os.getenv("JWT_REFRESH_TOKEN_LIFETIME", "7 days"),
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
     "UPDATE_LAST_LOGIN": True,
