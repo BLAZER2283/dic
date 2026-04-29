@@ -33,6 +33,16 @@
 
       <v-btn
         variant="text"
+        href="/ucrp/"
+        target="_blank"
+        class="d-none d-md-flex"
+      >
+        <v-icon left>mdi-robot</v-icon>
+        Plasma Optimizer
+      </v-btn>
+
+      <v-btn
+        variant="text"
         @click="$router.push('/analyses/create')"
         color="accent"
         class="d-none d-md-flex"

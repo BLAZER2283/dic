@@ -26,10 +26,6 @@ class EPGCalculationViewSet(viewsets.ModelViewSet):
     serializer_class = EPGCalculationSerializer
     
     def get_permissions(self):
-        if self.request.method in ['POST']:
-            return [IsAuthenticated()]
-        elif self.request.method in ['put', 'patch', 'delete']:
-            return [IsAdminUser()]
         return [AllowAny()]
 
     def create(self, request, *args, **kwargs):

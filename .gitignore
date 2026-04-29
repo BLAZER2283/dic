@@ -145,6 +145,9 @@ Sample3/
 dic-frontend/node_modules/
 dic-frontend/dist/
 
+plasma-optimizer/node_modules/
+plasma-optimizer/dist/
+
 **/__pycache__/
 **/*.pyc
 **/*.pyo

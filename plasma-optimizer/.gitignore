@@ -1,0 +1,39 @@
+# Зависимости (НЕ ЗАГРУЖАТЬ!)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Файлы сборки (НЕ ЗАГРУЖАТЬ!)
+dist/
+dist-ssr/
+build/
+*.local
+
+# Файлы с секретами (НЕ ЗАГРУЖАТЬ!)
+.env
+.env.local
+.env.*.local
+
+# Файлы IDE (НЕ ЗАГРУЖАТЬ!)
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Файлы операционной системы (НЕ ЗАГРУЖАТЬ!)
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Логи (НЕ ЗАГРУЖАТЬ!)
+logs/
+*.log
+
+# Временные файлы (НЕ ЗАГРУЖАТЬ!)
+*.tmp
+*.temp
+.cache/
