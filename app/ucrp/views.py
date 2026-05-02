@@ -26,13 +26,15 @@ class EPGCalculationViewSet(viewsets.ModelViewSet):
     serializer_class = EPGCalculationSerializer
     
     def get_permissions(self):
+        if self.request.method in ["POST", "PUT", "PATCH", "DELETE"]:
+            return [IsAuthenticated()]
         return [AllowAny()]
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
     
-        calculation = serializer.save()
+        calculation = serializer.save(user=request.user)
     
         thread = threading.Thread(
             target=self._run_optimization,

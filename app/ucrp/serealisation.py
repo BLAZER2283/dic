@@ -72,6 +72,12 @@ class EPGCalculationSerializer(serializers.ModelSerializer):
     warnings_data = EPGWarningsSerializer(read_only=True)
     internal_data = EPGInternalDataSerializer(read_only=True)
 
+    vibration_level = serializers.FloatField(write_only=True, required=False)
+    n_ogark = serializers.FloatField(write_only=True, required=False)
+    time_from_last_cleaning = serializers.IntegerField(write_only=True, required=False)
+    roller_wear_mm = serializers.FloatField(write_only=True, required=False)
+    ambient_T = serializers.FloatField(write_only=True, required=False)
+
     class Meta:
         model = EPGCalculation
         fields = (
@@ -87,6 +93,11 @@ class EPGCalculationSerializer(serializers.ModelSerializer):
             "plasma_angle",
             "gas_flow",
             "pusher_speed",
+            "vibration_level",
+            "n_ogark",
+            "time_from_last_cleaning",
+            "roller_wear_mm",
+            "ambient_T",
             "created_at",
             "updated_at",
             "calculated_at",
@@ -96,5 +107,13 @@ class EPGCalculationSerializer(serializers.ModelSerializer):
             "internal_data",
         )
         read_only_fields = ("id", "created_at", "updated_at", "calculated_at")
+    
+    def create(self, validated_data):
+        aux_fields = ['vibration_level', 'n_ogark', 'time_from_last_cleaning', 'roller_wear_mm', 'ambient_T']
+        aux_data = {k: validated_data.pop(k, None) for k in aux_fields}
+        calculation = super().create(validated_data)
+        if any(v is not None for v in aux_data.values()):
+            EPGAuxiliaryParameters.objects.create(calculation=calculation, **aux_data)
+        return calculation
 
 

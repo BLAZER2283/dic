@@ -1,8 +1,33 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer, ComposedChart
 } from 'recharts';
+
+axios.interceptors.request.use((config) => {
+  const token = localStorage.getItem('access_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+const getLossesColor = (v) => {
+  if (v < 8) return 'text-green';
+  if (v < 12) return 'text-yellow';
+  return 'text-red';
+};
+const getGrainColor = (v) => {
+  if (v >= 100 && v <= 140) return 'text-green';
+  if (v >= 80 && v <= 160) return 'text-yellow';
+  return 'text-red';
+};
+const getStabilityColor = (v) => {
+  if (v >= 80) return 'text-green';
+  if (v >= 60) return 'text-yellow';
+  return 'text-red';
+};
 
 const App = () => {
   const defaultParams = {
@@ -28,6 +53,64 @@ const App = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [history, setHistory] = useState([]);
+  const [calcId, setCalcId] = useState(null);
+
+  useEffect(() => {
+    const path = window.location.pathname;
+    const match = path.match(/\/ucrp\/(\d+)/);
+    if (match) {
+      const id = parseInt(match[1]);
+      setCalcId(id);
+      fetchCalculationById(id);
+    } else {
+      loadHistory();
+    }
+  }, []);
+
+  const fetchCalculationById = async (id) => {
+    setLoading(true);
+    try {
+      const res = await axios.get(`/api/ucrp/calculations/${id}/`);
+      setResult(res.data);
+      if (res.data.material) {
+        setParams({
+          material: res.data.material,
+          diameter: res.data.diameter,
+          length: res.data.length,
+          mass_total: res.data.mass_total,
+          I_target: res.data.I_target,
+          n_electrode: res.data.n_electrode,
+          plasma_offset: res.data.plasma_offset || 0,
+          plasma_angle: res.data.plasma_angle || 86,
+          gas_flow: res.data.gas_flow || 2.6,
+          pusher_speed: res.data.pusher_speed || 45,
+          vibration_level: res.data.auxiliary_params?.vibration_level || 2,
+          n_ogark: res.data.auxiliary_params?.n_ogark || 26000,
+          time_from_last_cleaning: res.data.auxiliary_params?.time_from_last_cleaning || 0,
+          roller_wear_mm: res.data.auxiliary_params?.roller_wear_mm || 0,
+          ambient_T: res.data.auxiliary_params?.ambient_T || 20,
+        });
+      }
+    } catch (err) {
+      setError('Расчёт не найден');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadHistory = async () => {
+    try {
+      const res = await axios.get('/api/ucrp/calculations/');
+      const items = Array.isArray(res.data) ? res.data : res.data.results || [];
+      setHistory(items);
+      if (items.length > 0 && !result) {
+        const lastCompleted = items.find(i => i.calculated_at);
+        if (lastCompleted) {
+          setResult(lastCompleted);
+        }
+      }
+    } catch (e) {}
+  };
 
   const validateParam = (name, value) => {
     const ranges = {
@@ -78,33 +161,42 @@ const App = () => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    
     try {
-      const response = await fetch('/api/ucrp/calculations/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(params),
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `Ошибка ${response.status}: ${response.statusText}`);
+      const token = localStorage.getItem('access_token');
+      if (token) {
+        try {
+          const parts = token.split('.');
+          if (parts.length === 3) {
+            const b = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+            const payload = JSON.parse(decodeURIComponent(atob(b).split('').map(c => '%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)).join('')));
+            if (payload.exp && Date.now() >= payload.exp * 1000) {
+              localStorage.removeItem('access_token');
+              setLoading(false);
+              setError('Токен истёк — выполните вход заново.');
+              return;
+            }
+          }
+        } catch (err) {}
       }
-      
-      const data = await response.json();
-      setResult(data);
-      // после успешного создания — обновим историю
+
+      const response = await axios.post('/api/ucrp/calculations/', params, {
+        headers: { 'Content-Type': 'application/json' }
+      });
+      setResult(response.data);
+      setCalcId(response.data.calculation_id);
       try {
-        const h = await fetch('/api/ucrp/calculations/');
-        if (h.ok) {
-          const hd = await h.json();
-          setHistory(Array.isArray(hd) ? hd : hd.results || []);
-        }
+        const h = await axios.get('/api/ucrp/calculations/');
+        setHistory(Array.isArray(h.data) ? h.data : h.data.results || []);
       } catch (e) {}
     } catch (err) {
-      if (err.message === 'Failed to fetch') {
+      if (axios.isAxiosError(err)) {
+        if (err.response?.status === 401) {
+          localStorage.removeItem('access_token');
+          setError('Неавторизован: токен недействителен или истёк. Войдите снова.');
+        } else {
+          setError(err.response?.data?.detail || err.message);
+        }
+      } else if (err.message === 'Failed to fetch') {
         setError('Не удалось соединиться с сервером.');
       } else {
         setError(err.message);
@@ -117,22 +209,9 @@ const App = () => {
   const resetForm = () => {
     setParams(defaultParams);
     setResult(null);
-    setError(null);
+    setCalcId(null);
+    window.history.replaceState(null, '', '/ucrp/');
   };
-
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const res = await fetch('/api/ucrp/calculations/');
-        if (!res.ok) return;
-        const data = await res.json();
-        const items = Array.isArray(data) ? data : data.results || [];
-        if (mounted) setHistory(items);
-      } catch (e) {}
-    })();
-    return () => { mounted = false; };
-  }, []);
 
   const getRes = (r) => (r?.results) || r;
   const getInternal = (r) => r?.internal_data || {};
@@ -152,6 +231,8 @@ const App = () => {
   };
 
   const xAxisTicks = generateXAxisTicks(params.length);
+
+  const resData = result ? getRes(result) : null;
   
   return (
     <div className="app">
@@ -303,7 +384,10 @@ const App = () => {
                 <ul>
                   {history.map(item => (
                     <li key={item?.id || Math.random()} style={{ marginBottom: '6px' }}>
-                      <strong>#{item?.id}</strong> {item?.material} — {item?.diameter} мм — {(item?.calculated_at) ? new Date(item.calculated_at).toLocaleString() : 'в процессе'}
+                      <a href={`/ucrp/${item?.id}`} style={{ color: '#3d6b3d' }}>
+                        <strong>#{item?.id}</strong> {item?.material} — {item?.diameter} мм
+                      </a>
+                      {(item?.calculated_at) ? ` — ${new Date(item.calculated_at).toLocaleString()}` : ' — в процессе'}
                       {(item?.results) ? (
                         <div style={{ fontSize: '12px', color: '#6b5e4a' }}>Потери: {item?.results?.predicted_losses_pct}% — Размер: {Math.round(item?.results?.predicted_grain_size)} мкм</div>
                       ) : null}
@@ -320,37 +404,42 @@ const App = () => {
               </div>
             )}
             
-            {result && (
+            {result && resData && (
               <>
+                {calcId && (
+                  <div style={{ marginBottom: '12px', fontSize: '14px', color: '#6b5e4a' }}>
+                    Расчёт #{calcId}
+                  </div>
+                )}
                 <div className="kpi-grid">
                   <div className="kpi-card">
                     <div className="kpi-label">Потери материала</div>
-                    <div className={`kpi-value ${getLossesColor(getRes(result).predicted_losses_pct)}`}>
-                      {getRes(result).predicted_losses_pct}%
+                    <div className={`kpi-value ${getLossesColor(resData.predicted_losses_pct)}`}>
+                      {resData.predicted_losses_pct}%
                     </div>
                     <div className="kpi-sub">норма {'<10%'}</div>
                   </div>
                   <div className="kpi-card">
                     <div className="kpi-label">Размер гранул</div>
-                    <div className={`kpi-value ${getGrainColor(getRes(result).predicted_grain_size)}`}>
-                      {getRes(result).predicted_grain_size} мкм
+                    <div className={`kpi-value ${getGrainColor(resData.predicted_grain_size)}`}>
+                      {resData.predicted_grain_size} мкм
                     </div>
                     <div className="kpi-sub">цель 100–140 мкм</div>
                   </div>
                   <div className="kpi-card">
                     <div className="kpi-label">Целевая фракция</div>
                     <div className="kpi-value text-blue">
-                      {getRes(result).frac_100_140_pct}%
+                      {resData.frac_100_140_pct}%
                     </div>
                     <div className="kpi-sub">100–140 мкм</div>
                   </div>
                   <div className="kpi-card">
                     <div className="kpi-label">Стабильность</div>
-                    <div className={`kpi-value ${getStabilityColor(getRes(result).stability_index)}`}>
-                      {getRes(result).stability_index}
+                    <div className={`kpi-value ${getStabilityColor(resData.stability_index)}`}>
+                      {resData.stability_index}
                     </div>
                     <div className="progress-bar">
-                      <div className="progress-fill" style={{ width: `${getRes(result).stability_index}%` }}></div>
+                      <div className="progress-fill" style={{ width: `${resData.stability_index}%` }}></div>
                     </div>
                   </div>
                 </div>
@@ -489,21 +578,6 @@ const App = () => {
       </div>
     </div>
   );
-};
-const getLossesColor = (v) => {
-  if (v < 8) return 'text-green';
-  if (v < 12) return 'text-yellow';
-  return 'text-red';
-};
-const getGrainColor = (v) => {
-  if (v >= 100 && v <= 140) return 'text-green';
-  if (v >= 80 && v <= 160) return 'text-yellow';
-  return 'text-red';
-};
-const getStabilityColor = (v) => {
-  if (v >= 80) return 'text-green';
-  if (v >= 60) return 'text-yellow';
-  return 'text-red';
 };
 
 export default App;

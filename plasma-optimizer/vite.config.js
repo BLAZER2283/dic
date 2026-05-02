@@ -9,7 +9,7 @@ export default defineConfig({
     open: true,
     proxy: {
       '/api/ucrp': {
-        target: 'http://localhost:8000',
+        target: 'http://localhost:8080',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/ucrp/, '/api/ucrp'),
       },
