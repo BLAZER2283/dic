@@ -1,6 +1,20 @@
 version: '3.8'
 
 services:
+  nginx:
+    image: nginx:stable
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/site.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./dist/ucrp:/usr/share/nginx/html/ucrp:ro
+      - ./dist/dic:/usr/share/nginx/html/dic:ro
+    depends_on:
+      backend:
+        condition: service_started
+    networks:
+      - app-network
+
   db:
     image: postgres:15
     environment:
@@ -16,6 +30,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - app-network
 
   backend:
     build:
@@ -36,6 +52,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    networks:
+      - app-network
     command: >
       sh -c "
         echo 'Waiting for database...' &&
@@ -50,21 +68,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.frontend
-    ports:
-      - "8080:80"
-    depends_on:
-      - backend
+    networks:
+      - app-network
 
-  nginx:
-    image: nginx:stable
-    ports:
-      - "8080:80"
-    volumes:
-      - ./nginx/site.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./dist/ucrp:/usr/share/nginx/html/ucrp:ro
-      - ./dist/dic:/usr/share/nginx/html/dic:ro
-    depends_on:
-      - backend
+networks:
+  app-network:
 
 volumes:
   postgres_data:
