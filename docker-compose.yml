@@ -63,13 +63,52 @@ services:
         python manage.py collectstatic --noinput &&
         python manage.py runserver 0.0.0.0:8000
       "
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
+  celery:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:${POSTGRES_PORT}/${POSTGRES_DB}
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    volumes:
+      - ./media:/app/media
+      - ./results:/app/results
+    depends_on:
+      - redis
+      - db
+      - backend
+    networks:
+      - app-network
+    command: celery -A app worker -l info
 
+  flower: 
+    image: mher/flower:latest
+    ports:
+      - "5555:5555"
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+    networks:
+      - app-network
   frontend:
     build:
       context: .
       dockerfile: Dockerfile.frontend
     networks:
       - app-network
+  
+  
+
 
 networks:
   app-network:

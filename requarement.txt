@@ -20,3 +20,5 @@ django-redis
 drf-spectacular[sidecar]
 python-dotenv==1.0.1
 pytest
+celery==5.4.0
+flower==1.2.0
