@@ -283,6 +283,9 @@ start_containers() {
         log_info "Using existing .env file"
     else
         log_info "Creating .env file..."
+        log_info "Generating Django secret key..."
+        DJANGO_SECRET_KEY=$(python3 -c "import secrets; print('django-insecure-' + ''.join(secrets.choice('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*(-_=+)') for _ in range(50)))")
+        
         cat > .env << EOF
 POSTGRES_HOST=$POSTGRES_HOST
 POSTGRES_PORT=$POSTGRES_PORT
@@ -298,7 +301,7 @@ SEED_ENABLE=$DB_SEED
 SEED_DATA=$SEED_DATA
 FRONTEND_PORT=$FRONTEND_PORT
 BACKEND_PORT=$BACKEND_PORT
-DJANGO_SECRET_KEY=your-secret-key-here
+DJANGO_SECRET_KEY=$DJANGO_SECRET_KEY
 DJANGO_DEBUG=True
 EOF
     fi
