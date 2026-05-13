@@ -96,7 +96,7 @@ check_dependencies() {
         fi
     done
     
-    if [ ${#missing_deps[@]} -gt 0 ]; then
+if [ ${#missing_deps[@]} -gt 0 ]; then
         log_warning "Missing dependencies: ${missing_deps[*]}"
         log_info "Installing dependencies..."
         
@@ -112,9 +112,8 @@ check_dependencies() {
                                 sudo apt-get install -y curl
                                 ;;
                             docker)
-                                sudo curl -fsSL https://get.docker.com | sh
-                                sudo systemctl start docker
-                                sudo systemctl enable docker
+                                curl -fsSL https://get.docker.com | sh
+                                sudo usermod -aG docker "$USER"
                                 ;;
                             docker-compose)
                                 sudo curl -L "https://github.com/docker/compose/releases/download/v2.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
@@ -127,14 +126,41 @@ check_dependencies() {
                         esac
                     done
                     ;;
-                fedora|rhel)
-                    sudo dnf install -y "${missing_deps[@]}"
+                fedora|rhel|centos)
+                    for dep in "${missing_deps[@]}"; do
+                        case "$dep" in
+                            docker)
+                                sudo dnf install -y docker
+                                sudo systemctl start docker
+                                sudo systemctl enable docker
+                                ;;
+                            *)
+                                sudo dnf install -y "$dep"
+                                ;;
+                        esac
+                    done
                     ;;
                 arch)
                     sudo pacman -Sy --noconfirm "${missing_deps[@]}"
                     ;;
             esac
         fi
+    fi
+    
+    # Start docker if not running
+    if command -v docker &> /dev/null; then
+        if ! docker info &> /dev/null; then
+            log_info "Starting Docker..."
+            sudo systemctl start docker 2>/dev/null || sudo service docker start 2>/dev/null || log_warning "Could not start docker automatically"
+        fi
+    else
+        # Try to find docker
+        if [ -f /usr/bin/docker ]; then
+            log_info "Docker found at /usr/bin/docker"
+        elif [ -f /usr/local/bin/docker ]; then
+            log_info "Docker found at /usr/local/bin/docker"
+        fi
+    fi
     fi
     
     # Start docker if not running
