@@ -124,7 +124,8 @@ if [ ${#missing_deps[@]} -gt 0 ]; then
                     for dep in "${missing_deps[@]}"; do
                         case "$dep" in
                             docker)
-                                sudo dnf install -y docker
+                                sudo dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+                                sudo dnf install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
                                 sudo systemctl start docker
                                 sudo systemctl enable docker
                                 ;;
