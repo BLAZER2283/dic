@@ -100,7 +100,6 @@ if [ ${#missing_deps[@]} -gt 0 ]; then
         log_warning "Missing dependencies: ${missing_deps[*]}"
         log_info "Installing dependencies..."
         
-        # Detect OS and install
         if [ -f /etc/os-release ]; then
             source /etc/os-release
             case "$ID" in
@@ -115,18 +114,13 @@ if [ ${#missing_deps[@]} -gt 0 ]; then
                                 curl -fsSL https://get.docker.com | sh
                                 sudo usermod -aG docker "$USER"
                                 ;;
-                            docker-compose)
-                                sudo curl -L "https://github.com/docker/compose/releases/download/v2.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-                                sudo chmod +x /usr/local/bin/docker-compose
-                                sudo ln -sf /usr/local/bin/docker-compose /usr/bin/docker-compose
-                                ;;
                             git)
                                 sudo apt-get install -y git
                                 ;;
                         esac
                     done
                     ;;
-                fedora|rhel|centos)
+                fedora|rhel|centos|almalinux)
                     for dep in "${missing_deps[@]}"; do
                         case "$dep" in
                             docker)
@@ -147,23 +141,6 @@ if [ ${#missing_deps[@]} -gt 0 ]; then
         fi
     fi
     
-    # Start docker if not running
-    if command -v docker &> /dev/null; then
-        if ! docker info &> /dev/null; then
-            log_info "Starting Docker..."
-            sudo systemctl start docker 2>/dev/null || sudo service docker start 2>/dev/null || log_warning "Could not start docker automatically"
-        fi
-    else
-        # Try to find docker
-        if [ -f /usr/bin/docker ]; then
-            log_info "Docker found at /usr/bin/docker"
-        elif [ -f /usr/local/bin/docker ]; then
-            log_info "Docker found at /usr/local/bin/docker"
-        fi
-    fi
-    fi
-    
-    # Start docker if not running
     if command -v docker &> /dev/null; then
         if ! docker info &> /dev/null; then
             log_info "Starting Docker..."
