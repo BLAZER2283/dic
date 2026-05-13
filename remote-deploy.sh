@@ -135,7 +135,7 @@ build_scp_cmd() {
 run_remote() {
     local ssh_cmd
     ssh_cmd=$(build_ssh_cmd)
-    $ssh_cmd "${SSH_USER}@${SSH_HOST}" "$@"
+    $ssh_cmd -tt "${SSH_USER}@${SSH_HOST}" "$@"
 }
 
 upload_file() {
