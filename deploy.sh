@@ -304,6 +304,7 @@ FRONTEND_PORT=$FRONTEND_PORT
 BACKEND_PORT=$BACKEND_PORT
 DJANGO_SECRET_KEY=$DJANGO_SECRET_KEY
 DJANGO_DEBUG=True
+ALLOWED_HOSTS=$SERVER_HOST,localhost,127.0.0.1
 EOF
     fi
     
@@ -417,6 +418,10 @@ main() {
                 ;;
             --backend-port)
                 BACKEND_PORT="$2"
+                shift 2
+                ;;
+            --server-host)
+                SERVER_HOST="$2"
                 shift 2
                 ;;
             -h|--help)
