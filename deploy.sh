@@ -112,12 +112,14 @@ check_dependencies() {
                                 sudo apt-get install -y curl
                                 ;;
                             docker)
-                                curl -fsSL https://get.docker.com | sh
-                                sudo usermod -aG docker "$USER"
+                                sudo yum install -y docker
+                                sudo systemctl start docker
+                                sudo systemctl enable docker
                                 ;;
                             docker-compose)
-                                sudo curl -L "https://github.com/docker/compose/releases/download/v2.24.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+                                sudo curl -L "https://github.com/docker/compose/releases/download/v2.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
                                 sudo chmod +x /usr/local/bin/docker-compose
+                                sudo ln -sf /usr/local/bin/docker-compose /usr/bin/docker-compose
                                 ;;
                             git)
                                 sudo apt-get install -y git
