@@ -112,7 +112,7 @@ check_dependencies() {
                                 sudo apt-get install -y curl
                                 ;;
                             docker)
-                                sudo yum install -y docker
+                                sudo curl -fsSL https://get.docker.com | sh
                                 sudo systemctl start docker
                                 sudo systemctl enable docker
                                 ;;
