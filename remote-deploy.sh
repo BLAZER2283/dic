@@ -173,6 +173,12 @@ deploy() {
     
     log_success "SSH connection established"
     
+    log_info "Opening firewall ports..."
+    run_remote "firewall-cmd --permanent --add-port=8080/tcp --add-port=8000/tcp --add-port=5432/tcp --add-port=6379/tcp --add-port=5555/tcp 2>/dev/null || true"
+    run_remote "firewall-cmd --permanent --add-masquerade 2>/dev/null || true"
+    run_remote "firewall-cmd --reload 2>/dev/null || true"
+    run_remote "firewall-cmd --list-all 2>/dev/null || true"
+    
     log_info "Uploading deploy script..."
     upload_file "${SCRIPT_DIR}/${DEPLOY_SCRIPT}" "/tmp/${DEPLOY_SCRIPT}"
     
