@@ -177,7 +177,12 @@ deploy() {
     run_remote "firewall-cmd --permanent --add-port=8080/tcp --add-port=8000/tcp --add-port=5432/tcp --add-port=6379/tcp --add-port=5555/tcp 2>/dev/null || true"
     run_remote "firewall-cmd --permanent --add-masquerade 2>/dev/null || true"
     run_remote "firewall-cmd --reload 2>/dev/null || true"
-    run_remote "firewall-cmd --list-all 2>/dev/null || true"
+    
+    log_info "Adding iptables rules for Docker..."
+    run_remote "iptables -I INPUT -p tcp --dport 8080 -j ACCEPT 2>/dev/null || true"
+    run_remote "iptables -I INPUT -p tcp --dport 8000 -j ACCEPT 2>/dev/null || true"
+    run_remote "iptables -I INPUT -p tcp --dport 5555 -j ACCEPT 2>/dev/null || true"
+    run_remote "service iptables save 2>/dev/null || true"
     
     log_info "Uploading deploy script..."
     upload_file "${SCRIPT_DIR}/${DEPLOY_SCRIPT}" "/tmp/${DEPLOY_SCRIPT}"
