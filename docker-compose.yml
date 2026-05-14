@@ -61,7 +61,7 @@ services:
         echo 'Database is ready!' &&
         python manage.py migrate &&
         python manage.py collectstatic --noinput &&
-        python manage.py runserver 0.0.0.0:8000
+        gunicorn app.wsgi:application --bind 0.0.0.0:8000 --workers 3
       "
   redis:
     image: redis:7-alpine
@@ -100,11 +100,7 @@ services:
       - redis
     networks:
       - app-network
-  frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile.frontend
-    networks:
+networks:
       - app-network
   
   

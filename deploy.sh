@@ -96,13 +96,13 @@ check_dependencies() {
     
     local missing_deps=()
     
-    for cmd in curl docker git; do
+    for cmd in curl git; do
         if ! command -v "$cmd" &> /dev/null; then
             missing_deps+=("$cmd")
         fi
     done
     
-if [ ${#missing_deps[@]} -gt 0 ]; then
+    if [ ${#missing_deps[@]} -gt 0 ]; then
         log_warning "Missing dependencies: ${missing_deps[*]}"
         log_info "Installing dependencies..."
         
@@ -147,6 +147,26 @@ if [ ${#missing_deps[@]} -gt 0 ]; then
                     sudo pacman -Sy --noconfirm "${missing_deps[@]}"
                     ;;
             esac
+        fi
+    fi
+    
+    if ! command -v docker-compose &> /dev/null; then
+        if ! docker-compose version &> /dev/null 2>&1; then
+            log_info "Installing docker-compose..."
+            curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+            chmod +x /usr/local/bin/docker-compose
+            log_success "docker-compose installed"
+        fi
+    fi
+    
+    if command -v docker-compose &> /dev/null; then
+        log_info "Creating docker-compose alias (v2 style)..."
+        if [ -f /etc/bash.bashrc ]; then
+            echo "alias docker-compose='docker-compose'" >> /etc/bash.bashrc
+        fi
+        if [ -f /etc/profile.d ]; then
+            echo "alias docker-compose='docker-compose'" > /etc/profile.d/docker-compose-alias.sh
+            chmod +x /etc/profile.d/docker-compose-alias.sh
         fi
     fi
     
@@ -253,15 +273,15 @@ stop_containers() {
     
     if [ -f "$COMPOSE_FILE" ]; then
         # Check if containers are running
-        if docker compose -f "$COMPOSE_FILE" ps &> /dev/null; then
+        if docker-compose -f "$COMPOSE_FILE" ps &> /dev/null; then
             log_info "Stopping containers..."
-            docker compose -f "$COMPOSE_FILE" down 2>/dev/null || true
+            docker-compose -f "$COMPOSE_FILE" down 2>/dev/null || true
             
             # Wait for containers to stop
             local max_attempts=30
             local attempt=0
             while [ $attempt -lt $max_attempts ]; do
-                if ! docker compose -f "$COMPOSE_FILE" ps &> /dev/null; then
+                if ! docker-compose -f "$COMPOSE_FILE" ps &> /dev/null; then
                     break
                 fi
                 sleep 1
@@ -323,8 +343,8 @@ EOF
     fi
     
     # Build and start containers
-    docker compose -f "$COMPOSE_FILE" build --no-cache
-    docker compose -f "$COMPOSE_FILE" up -d
+    docker-compose -f "$COMPOSE_FILE" build --no-cache
+    docker-compose -f "$COMPOSE_FILE" up -d
     
     log_success "Containers started"
 }
@@ -372,7 +392,7 @@ healthcheck() {
             log_error "$service failed to start"
             
             # Show logs for debugging
-            docker compose -f "$COMPOSE_FILE" logs "$service" | tail -50
+            docker-compose -f "$COMPOSE_FILE" logs "$service" | tail -50
             return 1
         fi
     done
