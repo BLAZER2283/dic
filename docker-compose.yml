@@ -90,7 +90,7 @@ services:
       - app-network
     command: celery -A app worker -l info
 
-  flower: 
+flower: 
     image: mher/flower:latest
     ports:
       - "5555:5555"
@@ -100,11 +100,6 @@ services:
       - redis
     networks:
       - app-network
-networks:
-      - app-network
-  
-  
-
 
 networks:
   app-network:
