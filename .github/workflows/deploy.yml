@@ -1,8 +1,5 @@
 name: Deploy to Server
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 jobs:
   deploy:
@@ -15,12 +12,12 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-      - name: Add server to known hosts
-        run: ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
-      - name: Deploy to server (remote)
-        env:
-          SERVER_IP: ${{ secrets.SERVER_IP }}
-          SERVER_USER: ${{ secrets.SERVER_USER }}
+          ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts 2>/dev/null
+      - name: Copy files to server
+        run: scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa -r . ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:/root/projects/dic/
+      - name: Run deploy script
         run: |
-          scp -r . $SERVER_USER@$SERVER_IP:/root/projects/dic/
-          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "cd /root/projects/dic && chmod +x remote-deploy.sh && ./remote-deploy.sh --host $SERVER_IP --key-file ~/.ssh/github_actions_key"
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} '
+            cd /root/projects/dic && chmod +x remote-deploy.sh && 
+            ./remote-deploy.sh --host ${{ secrets.SERVER_IP }} --key ~/.ssh/github_actions_key --repo ${{ secrets.GIT_REPO_URL }} --db-password "${{ secrets.DB_PASSWORD }}"
+          '
