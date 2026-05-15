@@ -1,0 +1,28 @@
+name: Deploy to Server
+on:
+  workflow_dispatch:
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      SERVER_IP: ${{ secrets.SERVER_IP }}
+      SERVER_USER: ${{ secrets.SERVER_USER }}
+      GIT_REPO_URL: ${{ secrets.GIT_REPO_URL }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts 2>/dev/null
+      - name: Copy files to server
+        run: scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa -r . $SERVER_USER@$SERVER_IP:/root/projects/dic/
+      - name: Run deploy script
+        run: |
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa $SERVER_USER@$SERVER_IP "
+            cd /root/projects/dic && chmod +x remote-deploy.sh && 
+            ./remote-deploy.sh --host $SERVER_IP --key ~/.ssh/github_actions_key --repo $GIT_REPO_URL --db-password '$DB_PASSWORD'
+          "
