@@ -23,4 +23,4 @@ jobs:
           SERVER_USER: ${{ secrets.SERVER_USER }}
         run: |
           scp -r . $SERVER_USER@$SERVER_IP:/root/projects/dic/
-          ssh $SERVER_USER@$SERVER_IP "cd /root/projects/dic && chmod +x remote-deploy.sh && ./remote-deploy.sh --host $SERVER_IP --key-file ~/.ssh/github_actions_key"
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "cd /root/projects/dic && chmod +x remote-deploy.sh && ./remote-deploy.sh --host $SERVER_IP --key-file ~/.ssh/github_actions_key"
