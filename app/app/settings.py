@@ -111,7 +111,7 @@ else:
 
 RESULTS_ROOT = BASE_DIR / "results"
 
-STATICFILES_DIRS = [BASE_DIR / "static"]
+STATICFILES_DIRS = []
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 MEDIA_URL = "media/"
