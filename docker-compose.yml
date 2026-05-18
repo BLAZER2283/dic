@@ -91,7 +91,7 @@ services:
       - backend
     networks:
       - app-network
-    command: celery -A app worker -l info -Q dic_queue -n dic_worker
+    command: celery -A app worker -l info -Q celery -n dic_worker
 
   celery-ucrp:
     build:

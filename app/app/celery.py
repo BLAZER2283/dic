@@ -7,8 +7,8 @@ app.autodiscover_tasks()
 
 app.conf.task_routes = {
     'ucrp.tasks.run_optimization': {'queue': 'ucrp_queue'},
-    'dic_api.tasks.process_dic_task': {'queue': 'dic_queue'},
+    'dic_api.tasks.process_dic_task': {'queue': 'celery'},
 }
 
-app.conf.task_default_queue = 'default'
+app.conf.task_default_queue = 'celery'
 app.conf.worker_prefetch_multiplier = 1

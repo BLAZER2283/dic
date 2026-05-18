@@ -75,14 +75,12 @@ class AnalysisImagesSerializer(serializers.ModelSerializer):
 
     def get_image_before_url(self, obj):
         if obj.image_before:
-            path = _tif_to_png(obj.image_before.name)
-            return f'/media/{path}'
+            return f'/media/{obj.image_before.name}'
         return None
 
     def get_image_after_url(self, obj):
         if obj.image_after:
-            path = _tif_to_png(obj.image_after.name)
-            return f'/media/{path}'
+            return f'/media/{obj.image_after.name}'
         return None
 
     def get_result_image_url(self, obj):
