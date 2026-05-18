@@ -1,310 +1,152 @@
 <template>
   <div class="analysis-create">
-    <!-- Header -->
-    <v-row class="mb-6">
-      <v-col cols="12">
-        <div class="d-flex align-center">
-          <v-btn
-            variant="text"
-            @click="$router.go(-1)"
-            class="me-4"
-            prepend-icon="mdi-arrow-left"
-          >
-            Back
-          </v-btn>
-          <div>
-            <h1 class="text-h4 font-weight-bold mb-2">Create New DIC Analysis</h1>
-            <p class="text-body-1 text-grey-darken-1">
-              Upload two images and configure parameters for digital image correlation analysis
-            </p>
-          </div>
-        </div>
-      </v-col>
-    </v-row>
+    <div class="create-header">
+      <h1>Создание нового анализа</h1>
+      <p>Загрузите два изображения и настройте параметры для анализа DIC</p>
+    </div>
 
     <v-row>
       <v-col cols="12" lg="8">
         <v-card>
+          <v-card-title class="section-title">
+            <v-icon left class="section-icon">mdi-image-outline</v-icon>
+            Загрузка изображений
+          </v-card-title>
           <v-card-text class="pa-6">
             <v-form ref="form" v-model="valid">
-              <!-- Analysis Name -->
-              <v-text-field
-                v-model="formData.name"
-                label="Analysis Name"
-                placeholder="Enter a descriptive name for your analysis"
-                :rules="[rules.required]"
-                class="mb-6"
-              />
+              <div class="form-group">
+                <label>Название анализа</label>
+                <v-text-field
+                  v-model="formData.name"
+                  placeholder="Введите название"
+                  variant="outlined"
+                  density="compact"
+                  hide-details
+                  :rules="[rules.required]"
+                  class="mb-4"
+                />
+              </div>
 
-              <!-- Image Upload Section -->
-              <div class="mb-6">
-                <h3 class="text-h6 mb-4">Upload Images</h3>
-                <p class="text-body-2 text-grey-darken-1 mb-4">
-                  Upload the reference image (before deformation) and the deformed image (after deformation).
-                  Supported formats: PNG, JPG, TIFF.
-                </p>
+              <v-row>
+                <v-col cols="12" md="6">
+                  <div class="upload-card" :class="{ 'upload-card--active': dragOver.before }"
+                    @dragover.prevent="dragOver.before = true"
+                    @dragleave.prevent="dragOver.before = false"
+                    @drop.prevent="handleDrop('before', $event)">
+                    <div v-if="!formData.image_before">
+                      <div class="upload-icon">📷</div>
+                      <div class="upload-title">Эталонное изображение</div>
+                      <div class="upload-subtitle">До деформации</div>
+                      <v-btn
+                        variant="outlined"
+                        @click="$refs.beforeInput.click()"
+                        class="btn-upload"
+                      >
+                        Выбрать файл
+                      </v-btn>
+                      <div class="upload-hint">или перетащите сюда</div>
+                    </div>
+                    <div v-else class="image-preview">
+                      <v-img :src="beforePreview" max-height="200" contain class="mb-4" />
+                      <div class="file-name">{{ formData.image_before.name }}</div>
+                      <v-btn size="small" variant="outlined" color="error" @click="removeImage('before')">
+                        Удалить
+                      </v-btn>
+                    </div>
+                    <input ref="beforeInput" type="file" accept="image/*" @change="handleFileSelect('before', $event)" style="display: none" />
+                  </div>
+                </v-col>
 
+                <v-col cols="12" md="6">
+                  <div class="upload-card" :class="{ 'upload-card--active': dragOver.after }"
+                    @dragover.prevent="dragOver.after = true"
+                    @dragleave.prevent="dragOver.after = false"
+                    @drop.prevent="handleDrop('after', $event)">
+                    <div v-if="!formData.image_after">
+                      <div class="upload-icon">📷</div>
+                      <div class="upload-title">Деформированное изображение</div>
+                      <div class="upload-subtitle">После деформации</div>
+                      <v-btn
+                        variant="outlined"
+                        @click="$refs.afterInput.click()"
+                        class="btn-upload"
+                      >
+                        Выбрать файл
+                      </v-btn>
+                      <div class="upload-hint">или перетащите сюда</div>
+                    </div>
+                    <div v-else class="image-preview">
+                      <v-img :src="afterPreview" max-height="200" contain class="mb-4" />
+                      <div class="file-name">{{ formData.image_after.name }}</div>
+                      <v-btn size="small" variant="outlined" color="error" @click="removeImage('after')">
+                        Удалить
+                      </v-btn>
+                    </div>
+                    <input ref="afterInput" type="file" accept="image/*" @change="handleFileSelect('after', $event)" style="display: none" />
+                  </div>
+                </v-col>
+              </v-row>
+
+              <div class="section-divider"></div>
+
+              <div class="form-section">
+                <div class="section-title-sm">Информация о образце</div>
                 <v-row>
-                  <!-- Before Image -->
                   <v-col cols="12" md="6">
-                    <v-card
-                      variant="outlined"
-                      class="upload-card"
-                      :class="{ 'upload-card--active': dragOver.before }"
-                      @dragover.prevent="dragOver.before = true"
-                      @dragleave.prevent="dragOver.before = false"
-                      @drop.prevent="handleDrop('before', $event)"
-                    >
-                      <v-card-text class="text-center pa-6">
-                        <v-icon
-                          size="64"
-                          color="grey-lighten-1"
-                          class="mb-4"
-                        >
-                          mdi-image-outline
-                        </v-icon>
-
-                        <div v-if="!formData.image_before">
-                          <div class="text-h6 mb-2">Reference Image</div>
-                          <div class="text-body-2 text-grey-darken-1 mb-4">
-                            Upload the image before deformation
-                          </div>
-
-                          <v-btn
-                            color="primary"
-                            variant="outlined"
-                            @click="$refs.beforeInput.click()"
-                            prepend-icon="mdi-upload"
-                          >
-                            Choose File
-                          </v-btn>
-
-                          <div class="mt-4 text-body-2 text-grey-darken-2">
-                            or drag and drop here
-                          </div>
-                        </div>
-
-                        <div v-else class="image-preview">
-                          <div class="text-body-1 mb-2">{{ formData.image_before.name }}</div>
-                          <v-img
-                            :src="beforePreview"
-                            max-height="200"
-                            contain
-                            class="mb-4 rounded"
-                          />
-                          <v-btn
-                            size="small"
-                            variant="text"
-                            color="error"
-                            @click="removeImage('before')"
-                          >
-                            Remove
-                          </v-btn>
-                        </div>
-
-                        <input
-                          ref="beforeInput"
-                          type="file"
-                          accept="image/*"
-                          @change="handleFileSelect('before', $event)"
-                          style="display: none"
-                        />
-                      </v-card-text>
-                    </v-card>
+                    <label class="field-label">Название</label>
+                    <v-text-field v-model="formData.sample_name" placeholder="Название образца" variant="outlined" density="compact" hide-details />
                   </v-col>
-
-                  <!-- After Image -->
                   <v-col cols="12" md="6">
-                    <v-card
-                      variant="outlined"
-                      class="upload-card"
-                      :class="{ 'upload-card--active': dragOver.after }"
-                      @dragover.prevent="dragOver.after = true"
-                      @dragleave.prevent="dragOver.after = false"
-                      @drop.prevent="handleDrop('after', $event)"
-                    >
-                      <v-card-text class="text-center pa-6">
-                        <v-icon
-                          size="64"
-                          color="grey-lighten-1"
-                          class="mb-4"
-                        >
-                          mdi-image-outline
-                        </v-icon>
-
-                        <div v-if="!formData.image_after">
-                          <div class="text-h6 mb-2">Deformed Image</div>
-                          <div class="text-body-2 text-grey-darken-1 mb-4">
-                            Upload the image after deformation
-                          </div>
-
-                          <v-btn
-                            color="primary"
-                            variant="outlined"
-                            @click="$refs.afterInput.click()"
-                            prepend-icon="mdi-upload"
-                          >
-                            Choose File
-                          </v-btn>
-
-                          <div class="mt-4 text-body-2 text-grey-darken-2">
-                            or drag and drop here
-                          </div>
-                        </div>
-
-                        <div v-else class="image-preview">
-                          <div class="text-body-1 mb-2">{{ formData.image_after.name }}</div>
-                          <v-img
-                            :src="afterPreview"
-                            max-height="200"
-                            contain
-                            class="mb-4 rounded"
-                          />
-                          <v-btn
-                            size="small"
-                            variant="text"
-                            color="error"
-                            @click="removeImage('after')"
-                          >
-                            Remove
-                          </v-btn>
-                        </div>
-
-                        <input
-                          ref="afterInput"
-                          type="file"
-                          accept="image/*"
-                          @change="handleFileSelect('after', $event)"
-                          style="display: none"
-                        />
-                      </v-card-text>
-                    </v-card>
+                    <label class="field-label">Материал</label>
+                    <v-text-field v-model="formData.material" placeholder="Материал" variant="outlined" density="compact" hide-details />
+                  </v-col>
+                  <v-col cols="12" md="6">
+                    <label class="field-label">Производитель</label>
+                    <v-text-field v-model="formData.manufacture" placeholder="Производитель" variant="outlined" density="compact" hide-details />
+                  </v-col>
+                  <v-col cols="12" md="6">
+                    <label class="field-label">Дата испытания</label>
+                    <v-text-field v-model="formData.test_date" type="date" variant="outlined" density="compact" hide-details />
                   </v-col>
                 </v-row>
               </div>
 
-              <!-- Sample Information Section -->
-              <div class="mb-6">
-                <h3 class="text-h6 mb-4">Sample Information</h3>
-                <p class="text-body-2 text-grey-darken-1 mb-4">
-                  Provide information about the sample being tested. This will be included in the analysis report.
-                </p>
+              <div class="section-divider"></div>
 
+              <div class="form-section">
+                <div class="section-title-sm">Параметры анализа</div>
                 <v-row>
-                  <v-col cols="12" md="6">
-                    <v-text-field
-                      v-model="formData.sample_name"
-                      label="Sample Name"
-                      placeholder="Enter sample name or identifier"
-                      hint="Descriptive name for the tested sample"
-                      persistent-hint
-                    />
+                  <v-col cols="12" md="4">
+                    <label class="field-label">Размер подмножества</label>
+                    <v-text-field v-model.number="formData.subset_size" type="number" variant="outlined" density="compact" hide-details :rules="[rules.subsetSize]" />
                   </v-col>
-
-                  <v-col cols="12" md="6">
-                    <v-text-field
-                      v-model="formData.material"
-                      label="Material"
-                      placeholder="Enter material type"
-                      hint="Material composition or type"
-                      persistent-hint
-                    />
+                  <v-col cols="12" md="4">
+                    <label class="field-label">Шаг</label>
+                    <v-text-field v-model.number="formData.step" type="number" variant="outlined" density="compact" hide-details />
                   </v-col>
-
-                  <v-col cols="12" md="6">
-                    <v-text-field
-                      v-model="formData.manufacture"
-                      label="Manufacturer"
-                      placeholder="Enter manufacturer name"
-                      hint="Company or entity that produced the sample"
-                      persistent-hint
-                    />
+                  <v-col cols="12" md="4">
+                    <label class="field-label">Макс. итераций</label>
+                    <v-text-field v-model.number="formData.max_iter" type="number" variant="outlined" density="compact" hide-details />
                   </v-col>
-
-                  <v-col cols="12" md="6">
-                    <v-text-field
-                      v-model="formData.test_date"
-                      label="Test Date"
-                      type="date"
-                      hint="Date when the test was performed"
-                      persistent-hint
-                    />
+                  <v-col cols="12" md="4">
+                    <label class="field-label">Мин. корреляция</label>
+                    <v-text-field v-model.number="formData.min_correlation" type="number" step="0.01" variant="outlined" density="compact" hide-details />
                   </v-col>
                 </v-row>
               </div>
 
-              <!-- Parameters Section -->
-              <div class="mb-6">
-                <h3 class="text-h6 mb-4">Analysis Parameters</h3>
-                <p class="text-body-2 text-grey-darken-1 mb-4">
-                  Configure the DIC algorithm parameters. Default values are recommended for most cases.
-                </p>
-
-                <v-row>
-                  <v-col cols="12" md="4">
-                    <v-text-field
-                      v-model.number="formData.subset_size"
-                      label="Subset Size"
-                      type="number"
-                      :rules="[rules.required, rules.subsetSize]"
-                      hint="Size of correlation window (pixels)"
-                      persistent-hint
-                    />
-                  </v-col>
-
-                  <v-col cols="12" md="4">
-                    <v-text-field
-                      v-model.number="formData.step"
-                      label="Step Size"
-                      type="number"
-                      :rules="[rules.required, rules.minValue(1)]"
-                      hint="Step between correlation points"
-                      persistent-hint
-                    />
-                  </v-col>
-
-                  <v-col cols="12" md="4">
-                    <v-text-field
-                      v-model.number="formData.max_iter"
-                      label="Max Iterations"
-                      type="number"
-                      :rules="[rules.required, rules.minValue(1)]"
-                      hint="Maximum iterations for convergence"
-                      persistent-hint
-                    />
-                  </v-col>
-
-                  <v-col cols="12" md="4">
-                    <v-text-field
-                      v-model.number="formData.min_correlation"
-                      label="Min Correlation"
-                      type="number"
-                      step="0.01"
-                      :rules="[rules.correlationValue]"
-                      hint="Minimum correlation coefficient (0-1)"
-                      persistent-hint
-                    />
-                  </v-col>
-                </v-row>
-              </div>
-
-              <!-- Actions -->
-              <div class="d-flex gap-4 justify-end">
-                <v-btn
-                  variant="text"
-                  @click="$router.go(-1)"
-                  :disabled="creating"
-                >
-                  Cancel
+              <div class="form-actions">
+                <v-btn variant="outlined" @click="$router.go(-1)" :disabled="creating" class="btn-secondary">
+                  Отмена
                 </v-btn>
                 <v-btn
                   color="primary"
-                  size="large"
-                  @click="() => { console.log('DEBUG: Button clicked'); submitForm(); }"
+                  @click="submitForm"
                   :loading="creating"
                   :disabled="!valid || !formData.image_before || !formData.image_after"
+                  class="btn-primary"
                 >
-                  Start Analysis
+                  Начать анализ
                 </v-btn>
               </div>
             </v-form>
@@ -312,90 +154,30 @@
         </v-card>
       </v-col>
 
-      <!-- Info Panel -->
       <v-col cols="12" lg="4">
-        <v-card class="mb-4">
-          <v-card-title>
-            <v-icon left>mdi-information-outline</v-icon>
-            DIC Analysis Info
+        <v-card class="info-card">
+          <v-card-title class="section-title">
+            <v-icon left class="section-icon">mdi-information-outline</v-icon>
+            О DIC анализе
           </v-card-title>
           <v-card-text>
-            <div class="mb-4">
-              <h4 class="text-body-1 font-weight-bold mb-2">What is DIC?</h4>
-              <p class="text-body-2 text-grey-darken-1">
-                Digital Image Correlation (DIC) is a non-contact optical method for measuring
-                deformation and strain on surfaces. It compares two images to calculate displacement fields.
-              </p>
+            <div class="info-text">
+              <strong>Что такое DIC?</strong>
+              <p>Цифровая корреляция изображений (DIC) — бесконтактный оптический метод измерения деформаций и напряжений на поверхности.</p>
             </div>
-
-            <v-divider class="my-4"></v-divider>
-
-            <div class="mb-4">
-              <h4 class="text-body-1 font-weight-bold mb-2">Image Requirements</h4>
-              <ul class="text-body-2 text-grey-darken-1">
-                <li>Images should have similar lighting conditions</li>
-                <li>Good contrast and texture on the surface</li>
-                <li>Minimal out-of-plane deformation</li>
-                <li>Same camera position and settings</li>
+            <div class="info-divider"></div>
+            <div class="info-text">
+              <strong>Требования к изображениям:</strong>
+              <ul>
+                <li>Одинаковые условия освещения</li>
+                <li>Хороший контраст и текстура</li>
+                <li>Минимальная деформация</li>
               </ul>
-            </div>
-
-            <v-divider class="my-4"></v-divider>
-
-            <div>
-              <h4 class="text-body-1 font-weight-bold mb-2">Parameters Guide</h4>
-              <ul class="text-body-2 text-grey-darken-1">
-                <li><strong>Subset Size:</strong> Larger values for noisy images</li>
-                <li><strong>Step:</strong> Smaller values for higher resolution</li>
-                <li><strong>Max Iterations:</strong> More iterations for convergence</li>
-                <li><strong>Min Correlation:</strong> Lower values for poor images</li>
-              </ul>
-            </div>
-          </v-card-text>
-        </v-card>
-
-        <!-- Processing Time Estimate -->
-        <v-card v-if="formData.image_before && formData.image_after">
-          <v-card-title>
-            <v-icon left>mdi-timer-outline</v-icon>
-            Estimated Processing Time
-          </v-card-title>
-          <v-card-text>
-            <div class="text-h6 text-center mb-2">{{ estimatedTime }}</div>
-            <div class="text-body-2 text-grey-darken-1 text-center">
-              Based on image size and parameters
             </div>
           </v-card-text>
         </v-card>
       </v-col>
     </v-row>
-
-    <!-- Success Dialog -->
-    <v-dialog v-model="showSuccessDialog" max-width="500">
-      <v-card>
-        <v-card-title class="text-h6 text-success">
-          <v-icon left color="success">mdi-check-circle</v-icon>
-          Analysis Created Successfully
-        </v-card-title>
-        <v-card-text>
-          Your DIC analysis has been created and is now being processed.
-          You can monitor its progress on the analyses page.
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn variant="text" @click="showSuccessDialog = false">
-            Stay Here
-          </v-btn>
-          <v-btn
-            color="primary"
-            variant="flat"
-            @click="$router.push(`/analyses/${createdAnalysis?.id}`)"
-          >
-            View Analysis
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
   </div>
 </template>
 
@@ -625,32 +407,205 @@ onMounted(() => {
 <style scoped>
 .analysis-create {
   padding: 24px;
+  font-family: 'Montserrat', 'Arial', 'Helvetica', sans-serif;
+  background: #c4b8a5;
+  min-height: 100vh;
+}
+
+.create-header {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #b8aa95;
+}
+
+.create-header h1 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #2c2c2c;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+
+.create-header p {
+  font-size: 0.85rem;
+  color: #6b5e4a;
+}
+
+.v-card {
+  background: #f0ebe0 !important;
+  border: 1px solid #b8aa95 !important;
+  border-radius: 0 !important;
+}
+
+.section-title {
+  font-size: 0.85rem !important;
+  font-weight: 700 !important;
+  color: #2c2c2c !important;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid #b8aa95;
+  padding-bottom: 8px;
+}
+
+.section-icon {
+  font-size: 18px !important;
+  margin-right: 8px;
+}
+
+.section-title-sm {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #2c2c2c;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 16px;
 }
 
 .upload-card {
-  border: 2px dashed rgb(var(--v-theme-grey-lighten-1));
-  transition: all 0.3s ease;
-  cursor: pointer;
-  min-height: 300px;
+  background: #fffdf9;
+  border: 2px dashed #b8aa95;
+  padding: 32px 16px;
+  text-align: center;
+  min-height: 280px;
   display: flex;
+  flex-direction: column;
+  justify-content: center;
   align-items: center;
+  cursor: pointer;
+  transition: none;
 }
 
 .upload-card:hover {
-  border-color: rgb(var(--v-theme-primary));
-  background-color: rgba(var(--v-theme-primary), 0.04);
+  border-color: #2c2c2c;
+  background: #f5f0e5;
 }
 
 .upload-card--active {
-  border-color: rgb(var(--v-theme-primary));
-  background-color: rgba(var(--v-theme-primary), 0.08);
+  border-color: #2c2c2c;
+  background: #e8e0d5;
+}
+
+.upload-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.upload-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #2c2c2c;
+  margin-bottom: 4px;
+}
+
+.upload-subtitle {
+  font-size: 0.75rem;
+  color: #6b5e4a;
+  margin-bottom: 16px;
+}
+
+.btn-upload {
+  font-family: 'Montserrat', 'Arial', 'Helvetica', sans-serif !important;
+  font-size: 0.75rem !important;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border: 1px solid #b8aa95 !important;
+  background: #d4c9b8 !important;
+  color: #2c2c2c !important;
+}
+
+.upload-hint {
+  font-size: 0.7rem;
+  color: #8b7a62;
+  margin-top: 12px;
 }
 
 .image-preview {
   width: 100%;
 }
 
-.gap-4 {
-  gap: 16px;
+.file-name {
+  font-size: 0.75rem;
+  color: #2c2c2c;
+  margin-bottom: 12px;
+  word-break: break-all;
+}
+
+.section-divider {
+  height: 2px;
+  background: #b8aa95;
+  margin: 24px 0;
+}
+
+.form-section {
+  margin-bottom: 16px;
+}
+
+.field-label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #6b5e4a;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+  justify-content: flex-end;
+}
+
+.btn-primary {
+  background: #2c2c2c !important;
+  color: #f0ebe0 !important;
+  font-family: 'Montserrat', 'Arial', 'Helvetica', sans-serif !important;
+  font-size: 0.8rem !important;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-radius: 0 !important;
+}
+
+.btn-secondary {
+  font-family: 'Montserrat', 'Arial', 'Helvetica', sans-serif !important;
+  font-size: 0.8rem !important;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border: 1px solid #b8aa95 !important;
+  background: #d4c9b8 !important;
+  color: #2c2c2c !important;
+  border-radius: 0 !important;
+}
+
+.info-card {
+  background: #f0ebe0 !important;
+  border: 1px solid #b8aa95 !important;
+}
+
+.info-text {
+  font-size: 0.85rem;
+  color: #2c2c2c;
+  line-height: 1.5;
+}
+
+.info-text strong {
+  font-weight: 700;
+}
+
+.info-text ul {
+  padding-left: 16px;
+  margin-top: 8px;
+}
+
+.info-text li {
+  margin-bottom: 4px;
+}
+
+.info-divider {
+  height: 1px;
+  background: #b8aa95;
+  margin: 16px 0;
 }
 </style>

@@ -1,72 +1,65 @@
 <template>
-  <v-container class="fill-height" fluid>
-    <v-row align="center" justify="center">
-      <v-col cols="12" sm="8" md="6" lg="4">
-        <v-card elevation="8">
-          <v-card-title class="text-h4 font-weight-bold text-center pt-6">
-            Вход в систему
-          </v-card-title>
+  <v-container class="login-container" fluid>
+    <div class="login-wrapper">
+      <div class="login-header">
+        <h1>DIC Analyzer</h1>
+        <p>Вход в систему</p>
+      </div>
 
-          <v-card-text class="pa-6">
-            <v-form ref="form" v-model="valid" @submit.prevent="handleLogin">
-              <!-- Username -->
-              <v-text-field
-                v-model="loginData.username"
-                label="Имя пользователя"
-                prepend-inner-icon="mdi-account"
-                variant="outlined"
-                :rules="[rules.required]"
-                autocomplete="username"
-                required
-              />
+      <div class="login-card">
+        <v-form ref="form" v-model="valid" @submit.prevent="handleLogin">
+          <div class="form-group">
+            <label>Имя пользователя</label>
+            <v-text-field
+              v-model="loginData.username"
+              placeholder="Введите имя пользователя"
+              variant="outlined"
+              density="compact"
+              hide-details
+              :rules="[rules.required]"
+              autocomplete="username"
+            />
+          </div>
 
-              <!-- Password -->
-              <v-text-field
-                v-model="loginData.password"
-                label="Пароль"
-                prepend-inner-icon="mdi-lock"
-                variant="outlined"
-                type="password"
-                :rules="[rules.required]"
-                autocomplete="current-password"
-                required
-              />
+          <div class="form-group">
+            <label>Пароль</label>
+            <v-text-field
+              v-model="loginData.password"
+              placeholder="Введите пароль"
+              variant="outlined"
+              density="compact"
+              hide-details
+              type="password"
+              :rules="[rules.required]"
+              autocomplete="current-password"
+            />
+          </div>
 
-              <!-- Error message -->
-              <v-alert
-                v-if="authError"
-                type="error"
-                variant="tonal"
-                class="mb-4"
-                density="compact"
-              >
-                {{ authError }}
-              </v-alert>
+          <div v-if="authError" class="error-box">
+            {{ authError }}
+          </div>
 
-              <!-- Submit button -->
-              <v-btn
-                type="submit"
-                color="primary"
-                size="large"
-                block
-                :loading="isLoading"
-                :disabled="!valid"
-              >
-                Войти
-              </v-btn>
+          <div class="button-group">
+            <v-btn
+              type="submit"
+              block
+              :loading="isLoading"
+              :disabled="!valid"
+              class="btn-primary"
+            >
+              Войти
+            </v-btn>
+          </div>
 
-              <!-- Register link -->
-              <div class="text-center mt-4">
-                <span class="text-grey-darken-1">Нет аккаунта? </span>
-                <router-link to="/register" class="text-primary text-decoration-none">
-                  Зарегистрироваться
-                </router-link>
-              </div>
-            </v-form>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
+          <div class="text-center mt-4">
+            <span class="text-link">Нет аккаунта? </span>
+            <router-link to="/register" class="text-link-bold">
+              Зарегистрироваться
+            </router-link>
+          </div>
+        </v-form>
+      </div>
+    </div>
   </v-container>
 </template>
 
@@ -101,8 +94,109 @@ const handleLogin = async () => {
   try {
     await authStore.login(loginData);
     router.push('/');
-  } catch (err: any) {
-    // Error already set in store
-  }
+  } catch (err: any) {}
 };
 </script>
+
+<style scoped>
+.login-container {
+  min-height: calc(100vh - 64px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #c4b8a5;
+  font-family: 'Montserrat', 'Arial', 'Helvetica', sans-serif;
+}
+
+.login-wrapper {
+  width: 100%;
+  max-width: 400px;
+  padding: 20px;
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #b8aa95;
+}
+
+.login-header h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2c2c2c;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+
+.login-header p {
+  font-size: 0.9rem;
+  color: #6b5e4a;
+}
+
+.login-card {
+  background: #f0ebe0;
+  border: 1px solid #b8aa95;
+  padding: 24px;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #2c2c2c;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.error-box {
+  background: #fee2e2;
+  border: 1px solid #b88a8a;
+  color: #5c2e2e;
+  padding: 10px;
+  margin-bottom: 16px;
+  font-size: 0.85rem;
+}
+
+.button-group {
+  margin-top: 24px;
+}
+
+.btn-primary {
+  background: #2c2c2c !important;
+  color: #f0ebe0 !important;
+  font-family: 'Montserrat', 'Arial', 'Helvetica', sans-serif !important;
+  font-size: 0.85rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 1px !important;
+  border-radius: 0 !important;
+  height: 48px !important;
+}
+
+.btn-primary:hover {
+  background: #1a1a1a !important;
+}
+
+.text-link {
+  font-size: 0.85rem;
+  color: #6b5e4a;
+}
+
+.text-link-bold {
+  font-size: 0.85rem;
+  color: #2c2c2c;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.text-link-bold:hover {
+  text-decoration: underline;
+}
+</style>
