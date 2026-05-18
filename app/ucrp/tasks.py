@@ -2,8 +2,9 @@ from celery import shared_task
 from django.utils import timezone
 from .models import EPGCalculation, EPGResults, EPGWarnings, EPGInternalData, MATERIAL_CHOICES, MATERIAL_PROPERTIES
 from ucrp.logik.plasma_optimizer import PlasmaOptimizer
-@shared_task
-def run_optimization(calculation_id):
+
+@shared_task(bind=True, queue='ucrp_queue')
+def run_optimization(self, calculation_id):
     try:
         calculation = EPGCalculation.objects.get(id=calculation_id)
         aux_params = getattr(calculation, 'auxiliary_params', None)
