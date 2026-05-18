@@ -70,7 +70,7 @@ const App = () => {
   const fetchCalculationById = async (id) => {
     setLoading(true);
     try {
-      const res = await axios.get(`/api/ucrp/calculations/${id}/`);
+      const res = await axios.get(`/api/calculations/${id}/`);
       setResult(res.data);
       if (res.data.material) {
         setParams({
@@ -100,7 +100,7 @@ const App = () => {
 
   const loadHistory = async () => {
     try {
-      const res = await axios.get('/api/ucrp/calculations/');
+      const res = await axios.get('/api/calculations/');
       const items = Array.isArray(res.data) ? res.data : res.data.results || [];
       setHistory(items);
       if (items.length > 0 && !result) {
@@ -179,7 +179,7 @@ const App = () => {
         } catch (err) {}
       }
 
-      const response = await axios.post('/api/ucrp/calculations/', params, {
+      const response = await axios.post('/api/calculations/', params, {
         headers: { 'Content-Type': 'application/json' }
       });
       setResult(response.data);

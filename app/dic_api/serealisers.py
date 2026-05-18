@@ -4,6 +4,15 @@ from django.conf import settings
 import os
 
 
+def _tif_to_png(path):
+    """Convert TIF/TIFF path to PNG path."""
+    if not path:
+        return None
+    ext = os.path.splitext(str(path))[1].lower()
+    if ext in ['.tif', '.tiff']:
+        return str(path).rsplit('.', 1)[0] + '.png'
+    return path
+
 
 class SampleSerializer(serializers.ModelSerializer):
     """Сериализатор для модели образца."""
@@ -66,12 +75,14 @@ class AnalysisImagesSerializer(serializers.ModelSerializer):
 
     def get_image_before_url(self, obj):
         if obj.image_before:
-            return f'/media/{obj.image_before.name}'
+            path = _tif_to_png(obj.image_before.name)
+            return f'/media/{path}'
         return None
 
     def get_image_after_url(self, obj):
         if obj.image_after:
-            return f'/media/{obj.image_after.name}'
+            path = _tif_to_png(obj.image_after.name)
+            return f'/media/{path}'
         return None
 
     def get_result_image_url(self, obj):

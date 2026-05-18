@@ -9,8 +9,25 @@ import os
 import json
 from ..models import AnalysisTask
 import logging
+from PIL import Image
 
 logger = logging.getLogger(__name__)
+
+
+def convert_tif_to_png(image_path: str) -> str:
+    """Convert TIF/TIFF to PNG if needed."""
+    ext = os.path.splitext(image_path)[1].lower()
+    if ext in ['.tif', '.tiff']:
+        try:
+            png_path = image_path.rsplit('.', 1)[0] + '.png'
+            if not os.path.exists(png_path):
+                img = Image.open(image_path)
+                img.save(png_path, 'PNG')
+            return png_path
+        except Exception as e:
+            logger.warning("Failed to convert TIF to PNG: %s", e)
+            return image_path
+    return image_path
 
 
 class ImageActionsMixin:
@@ -42,7 +59,7 @@ class ImageActionsMixin:
                         logger.warning("DOWNLOAD: Displacement map file not found: %s", images.displacement_map_path)
 
                 if images.image_before and hasattr(images.image_before, "path"):
-                    before_path = images.image_before.path
+                    before_path = convert_tif_to_png(images.image_before.path)
                     if os.path.exists(before_path):
                         with open(before_path, "rb") as img_file:
                             zip_file.writestr("original_before.png", img_file.read())
@@ -51,7 +68,7 @@ class ImageActionsMixin:
                         logger.warning("DOWNLOAD: Before image file not found: %s", before_path)
 
                 if images.image_after and hasattr(images.image_after, "path"):
-                    after_path = images.image_after.path
+                    after_path = convert_tif_to_png(images.image_after.path)
                     if os.path.exists(after_path):
                         with open(after_path, "rb") as img_file:
                             zip_file.writestr("original_after.png", img_file.read())
@@ -109,13 +126,22 @@ class ImageActionsMixin:
             if image_type == "displacement" and images.displacement_map_path:
                 image_path = images.displacement_map_path
             elif image_type == "before" and images.image_before:
-                image_path = images.image_before.path
+                image_path = convert_tif_to_png(images.image_before.path)
             elif image_type == "after" and images.image_after:
-                image_path = images.image_after.path
+                image_path = convert_tif_to_png(images.image_after.path)
 
         if image_path and os.path.exists(image_path):
             ext = os.path.splitext(image_path)[1].lower()
-            content_type = f"image/{ext[1:]}" if ext else "image/png"
+            mime_types = {
+                '.tif': 'image/tiff',
+                '.tiff': 'image/tiff',
+                '.png': 'image/png',
+                '.jpg': 'image/jpeg',
+                '.jpeg': 'image/jpeg',
+                '.gif': 'image/gif',
+                '.bmp': 'image/bmp',
+            }
+            content_type = mime_types.get(ext, 'application/octet-stream')
             return FileResponse(open(image_path, "rb"), content_type=content_type, as_attachment=False)
 
         return Response({"error": "Image not found"}, status=404)

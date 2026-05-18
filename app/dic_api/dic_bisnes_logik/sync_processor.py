@@ -119,6 +119,9 @@ class SyncDICProcessor:
         """
         Синхронная загрузка изображений.
         """
+        img1_path = self._ensure_png(img1_path)
+        img2_path = self._ensure_png(img2_path)
+
         img1 = Image.open(img1_path)
         img2 = Image.open(img2_path)
 
@@ -137,6 +140,17 @@ class SyncDICProcessor:
             img2_array = img2_array[:min_height, :min_width]
 
         return img1_array, img2_array
+
+    def _ensure_png(self, img_path: str) -> str:
+        """Convert image to PNG if it's TIF/TIFF."""
+        ext = os.path.splitext(img_path)[1].lower()
+        if ext in ['.tif', '.tiff']:
+            png_path = img_path.rsplit('.', 1)[0] + '.png'
+            if not os.path.exists(png_path):
+                img = Image.open(img_path)
+                img.save(png_path, 'PNG')
+            return png_path
+        return img_path
 
     def _save_images_sync(self, img1, img2, U, V, x_coords, y_coords, output_dir, test_id):
         """
