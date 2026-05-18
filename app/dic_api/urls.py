@@ -1,7 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import AnalysisTaskViewSet
-from ..ucrp.views import EPGCalculationViewSet
+from ucrp.views import EPGCalculationViewSet
 
 router = DefaultRouter()
 router.register(r'analyses', AnalysisTaskViewSet, basename='dic-analysis')
