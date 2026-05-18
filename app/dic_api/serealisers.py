@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Sample, AnalysisTask, AnalysisParameters, AnalysisImages, AnalysisResults
+from django.conf import settings
 import os
 
 
@@ -65,47 +66,36 @@ class AnalysisImagesSerializer(serializers.ModelSerializer):
 
     def get_image_before_url(self, obj):
         if obj.image_before:
-            request = self.context.get('request')
-            if request:
-                return request.build_absolute_uri(obj.image_before.url)
+            return f'/media/{obj.image_before.name}'
         return None
 
     def get_image_after_url(self, obj):
         if obj.image_after:
-            request = self.context.get('request')
-            if request:
-                return request.build_absolute_uri(obj.image_after.url)
+            return f'/media/{obj.image_after.name}'
         return None
 
     def get_result_image_url(self, obj):
-        if obj.result_image_path and os.path.exists(obj.result_image_path):
-            request = self.context.get('request')
-            if request:
-                return request.build_absolute_uri(f'/media/results/{os.path.basename(obj.result_image_path)}')
+        if obj.result_image_path:
+            path = obj.result_image_path.lstrip('/')
+            return f'/media/{path}'
         return None
 
     def get_original_image_url(self, obj):
-        if obj.original_image_path and os.path.exists(obj.original_image_path):
-            request = self.context.get('request')
-            if request:
-                return request.build_absolute_uri(f'/media/results/{os.path.basename(obj.original_image_path)}')
+        if obj.original_image_path:
+            path = obj.original_image_path.lstrip('/')
+            return f'/media/{path}'
         return None
 
     def get_deformed_image_url(self, obj):
-        if obj.deformed_image_path and os.path.exists(obj.deformed_image_path):
-            request = self.context.get('request')
-            if request:
-                return request.build_absolute_uri(f'/media/results/{os.path.basename(obj.deformed_image_path)}')
+        if obj.deformed_image_path:
+            path = obj.deformed_image_path.lstrip('/')
+            return f'/media/{path}'
         return None
 
     def get_displacement_map_url(self, obj):
         if obj.displacement_map_path:
-            from django.conf import settings
-            full_path = os.path.join(settings.MEDIA_ROOT, obj.displacement_map_path)
-            if os.path.exists(full_path):
-                request = self.context.get('request')
-                if request:
-                    return request.build_absolute_uri(f'/media/results/{os.path.basename(obj.displacement_map_path)}')
+            path = obj.displacement_map_path.lstrip('/')
+            return f'/media/{path}'
         return None
 
 
