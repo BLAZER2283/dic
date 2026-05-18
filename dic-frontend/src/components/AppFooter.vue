@@ -1,19 +1,18 @@
 <template>
-  <v-footer app color="grey lighten-4" class="mt-8">
+  <v-footer app class="footer">
     <v-container>
       <v-row justify="center" align="center">
         <v-col cols="12" md="6" class="text-center text-md-left">
           <div class="d-flex align-center justify-center justify-md-start">
-            <v-icon color="primary" class="me-2">mdi-chart-line</v-icon>
-            <span class="text-body-2">
-              DIC Analyzer - Digital Image Correlation Analysis Tool
+            <span class="footer-text">
+              DIC Analyzer — Digital Image Correlation Analysis Tool
             </span>
           </div>
         </v-col>
 
         <v-col cols="12" md="6" class="text-center text-md-right">
-          <span class="text-caption text-grey-darken-1">
-            © {{ currentYear }} DIC Analyzer. Built with Vue.js & Django.
+          <span class="footer-sub">
+            © {{ currentYear }} — Автоматизация расчёта параметров УЦР
           </span>
         </v-col>
       </v-row>
@@ -28,7 +27,25 @@ const currentYear = computed(() => new Date().getFullYear())
 </script>
 
 <style scoped>
-.v-footer {
-  border-top: 1px solid rgba(0, 0, 0, 0.12);
+.footer {
+  background: #2c2c2c !important;
+  border-top: 2px solid #1a1a1a !important;
+  font-family: 'Montserrat', 'Arial', 'Helvetica', sans-serif;
+}
+
+.footer-text {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #e8e0d5;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.footer-sub {
+  font-size: 0.7rem;
+  color: #8b7a62;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 </style>

@@ -1,51 +1,56 @@
 <template>
   <div class="dashboard">
-    <h1>Dashboard</h1>
-    <p>Welcome to DIC Analyzer Dashboard!</p>
-
-    <div v-if="loading" class="loading">
-      <p>Загрузка статистики...</p>
+    <div class="dashboard-header">
+      <h1>DIC Analyzer</h1>
+      <p>Автоматизация расчёта оптимальных параметров цифровой корреляции изображений</p>
     </div>
 
-    <div v-else-if="error" class="error">
-      <p>{{ error }}</p>
+    <div v-if="loading" class="loading">
+      <div class="spinner"></div>
+      <p style="margin-top: 12px">Загрузка...</p>
+    </div>
+
+    <div v-else-if="error" class="error-box">
+      <strong>Ошибка:</strong> {{ error }}
     </div>
 
     <div v-else-if="!stats || stats.overview.total === 0" class="empty-state">
       <p>Пока нет анализов. Создайте первый!</p>
-      <button @click="$router.push('/analyses/create')" class="btn-primary">
-        Create New Analysis
-      </button>
+      <p style="font-size: 12px; margin-top: 8px; color: #6b5e4a;">Загрузите изображения и получите результаты анализа</p>
     </div>
 
-    <div v-else class="stats-grid">
-      <div class="stat-card">
-        <h3>Total Tasks</h3>
-        <div class="stat-number">{{ stats.overview.total }}</div>
+    <div v-else class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">Всего анализов</div>
+        <div class="kpi-value">{{ stats.overview.total }}</div>
+        <div class="kpi-sub">выполнено</div>
       </div>
 
-      <div class="stat-card">
-        <h3>Completed</h3>
-        <div class="stat-number">{{ stats.overview.completed }}</div>
+      <div class="kpi-card">
+        <div class="kpi-label">Завершено</div>
+        <div class="kpi-value text-green">{{ stats.overview.completed }}</div>
+        <div class="kpi-sub">успешно</div>
       </div>
 
-      <div class="stat-card">
-        <h3>Processing</h3>
-        <div class="stat-number">{{ stats.overview.processing }}</div>
+      <div class="kpi-card">
+        <div class="kpi-label">В процессе</div>
+        <div class="kpi-value text-yellow">{{ stats.overview.processing }}</div>
+        <div class="kpi-sub">обрабатывается</div>
       </div>
 
-      <div class="stat-card">
-        <h3>Errors</h3>
-        <div class="stat-number">{{ stats.overview.error }}</div>
+      <div class="kpi-card">
+        <div class="kpi-label">Ошибки</div>
+        <div class="kpi-value text-red">{{ stats.overview.error }}</div>
+        <div class="kpi-sub">требуют внимания</div>
       </div>
     </div>
 
     <div v-if="stats && stats.overview.total > 0" class="actions">
       <button @click="$router.push('/analyses/create')" class="btn-primary">
-        Create New Analysis
+        Новый анализ
       </button>
       <button @click="$router.push('/analyses')" class="btn-secondary">
-        View All Analyses
+        Все анализы
       </button>
     </div>
   </div>
@@ -85,9 +90,7 @@ onMounted(async () => {
   try {
     loading.value = true
     const response = await apiService.getAnalyses({ page_size: 1000 })
-    console.log('API Response:', response.data)
     
-    // API может возвращать массив или объект { results: [...] }
     if (Array.isArray(response.data)) {
       analyses.value = response.data
     } else if (response.data.results) {
@@ -95,12 +98,8 @@ onMounted(async () => {
     } else {
       analyses.value = []
     }
-    
-    console.log('Analyses count:', analyses.value.length)
-    console.log('First analysis:', analyses.value[0])
   } catch (err: any) {
-    console.error('Failed to fetch analyses:', err)
-    error.value = 'Не удалось загрузить данные: ' + (err.message || err)
+    error.value = err.message || 'Ошибка загрузки данных'
     analyses.value = []
   } finally {
     loading.value = false
@@ -110,90 +109,147 @@ onMounted(async () => {
 
 <style scoped>
 .dashboard {
-  padding: 20px;
+  padding: 24px;
   max-width: 1200px;
   margin: 0 auto;
+  font-family: 'Montserrat', 'Arial', 'Helvetica', sans-serif;
+}
+
+.dashboard-header {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #b8aa95;
+}
+
+.dashboard-header h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2c2c2c;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+
+.dashboard-header p {
+  font-size: 0.9rem;
+  color: #6b5e4a;
+  font-weight: 400;
 }
 
 .loading, .error, .empty-state {
   text-align: center;
   padding: 40px 20px;
   margin: 20px 0;
-  background: #f5f5f5;
-  border-radius: 8px;
+  background: #f0ebe0;
+  border: 1px solid #b8aa95;
 }
 
-.error {
-  color: #d32f2f;
-  background: #ffebee;
+.spinner {
+  display: inline-block;
+  width: 2rem;
+  height: 2rem;
+  border: 3px solid #d4c9b8;
+  border-top-color: #2c2c2c;
+  border-radius: 0;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.error-box {
+  background: #fee2e2;
+  border: 1px solid #b88a8a;
+  color: #5c2e2e;
+  padding: 12px;
+  margin-bottom: 16px;
+  font-weight: 600;
 }
 
 .empty-state {
-  color: #666;
+  color: #6b5e4a;
 }
 
-.stats-grid {
+.kpi-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 20px;
-  margin: 30px 0;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin: 24px 0;
 }
 
-.stat-card {
-  background: #f5f5f5;
-  border-radius: 8px;
-  padding: 20px;
-  text-align: center;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+@media (min-width: 768px) {
+  .kpi-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
 }
 
-.stat-card h3 {
-  margin: 0 0 10px 0;
-  color: #666;
-  font-size: 14px;
+.kpi-card {
+  background: #fffdf9;
+  border: 1px solid #b8aa95;
+  padding: 16px;
+}
+
+.kpi-label {
+  font-size: 0.75rem;
+  color: #6b5e4a;
+  margin-bottom: 8px;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
 }
 
-.stat-number {
-  font-size: 2.5em;
-  font-weight: bold;
-  color: #1976D2;
-  margin: 0;
+.kpi-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #2c2c2c;
 }
+
+.kpi-sub {
+  font-size: 0.7rem;
+  color: #8b7a62;
+  margin-top: 4px;
+}
+
+.text-green { color: #3d6b3d; }
+.text-yellow { color: #9e7b3e; }
+.text-red { color: #8b3a3a; }
 
 .actions {
   display: flex;
-  gap: 15px;
-  margin-top: 30px;
+  gap: 12px;
+  margin-top: 24px;
   flex-wrap: wrap;
 }
 
 .btn-primary, .btn-secondary {
   padding: 12px 24px;
   border: none;
-  border-radius: 6px;
-  font-size: 16px;
+  font-family: 'Montserrat', 'Arial', 'Helvetica', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
   cursor: pointer;
-  transition: all 0.3s ease;
 }
 
 .btn-primary {
-  background: #1976D2;
-  color: white;
+  background: #2c2c2c;
+  color: #f0ebe0;
 }
 
 .btn-primary:hover {
-  background: #1565C0;
+  background: #1a1a1a;
 }
 
 .btn-secondary {
-  background: #757575;
-  color: white;
+  background: #d4c9b8;
+  color: #2c2c2c;
+  border: 1px solid #b8aa95;
 }
 
 .btn-secondary:hover {
-  background: #616161;
+  background: #c4b8a5;
 }
 </style>
 

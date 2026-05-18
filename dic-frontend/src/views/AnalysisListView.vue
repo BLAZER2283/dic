@@ -451,6 +451,61 @@ watch([statusFilter, hasResultsFilter], () => {
 <style scoped>
 .analysis-list {
   padding: 24px;
+  font-family: 'Montserrat', 'Arial', 'Helvetica', sans-serif;
+  background: #c4b8a5;
+  min-height: 100vh;
+}
+
+.text-h4 {
+  font-family: 'Montserrat', 'Arial', 'Helvetica', sans-serif;
+  font-weight: 700;
+  color: #2c2c2c;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.text-body-1 {
+  font-family: 'Montserrat', 'Arial', 'Helvetica', sans-serif;
+  color: #6b5e4a;
+}
+
+.v-card {
+  background: #f0ebe0 !important;
+  border: 1px solid #b8aa95 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.v-card-title {
+  font-family: 'Montserrat', 'Arial', 'Helvetica', sans-serif;
+  font-weight: 700;
+  color: #2c2c2c;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid #b8aa95;
+  padding-bottom: 0.5rem;
+}
+
+.v-chip {
+  font-family: 'Montserrat', 'Arial', 'Helvetica', sans-serif;
+  border-radius: 0 !important;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 0.7rem !important;
+}
+
+.text-caption {
+  font-family: 'Montserrat', 'Arial', 'Helvetica', sans-serif;
+  color: #2c2c2c;
+}
+
+.v-btn {
+  font-family: 'Montserrat', 'Arial', 'Helvetica', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-radius: 0 !important;
 }
 
 .cursor-pointer {
@@ -458,7 +513,7 @@ watch([statusFilter, hasResultsFilter], () => {
 }
 
 .cursor-pointer:hover {
-  background-color: rgba(0, 0, 0, 0.04);
+  background-color: rgba(184, 170, 149, 0.2);
 }
 
 .gap-2 {

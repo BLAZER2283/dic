@@ -266,8 +266,8 @@ git commit -m "Resolve merge conflict in settings.py and complete Docker setup"<
                 <v-col cols="12" md="6">
                   <div class="text-h6 mb-4">Reference Image (Before)</div>
                   <v-img
-                    v-if="analysis.image_before_url"
-                    :src="analysis.image_before_url"
+                    v-if="analysis.images?.image_before_url"
+                    :src="analysis.images.image_before_url"
                     max-height="400"
                     contain
                     class="rounded border"
@@ -288,8 +288,8 @@ git commit -m "Resolve merge conflict in settings.py and complete Docker setup"<
                 <v-col cols="12" md="6">
                   <div class="text-h6 mb-4">Deformed Image (After)</div>
                   <v-img
-                    v-if="analysis.image_after_url"
-                    :src="analysis.image_after_url"
+                    v-if="analysis.images?.image_after_url"
+                    :src="analysis.images.image_after_url"
                     max-height="400"
                     contain
                     class="rounded border"
@@ -308,11 +308,11 @@ git commit -m "Resolve merge conflict in settings.py and complete Docker setup"<
               </v-row>
 
               <!-- Displacement Map -->
-              <v-row v-if="analysis.status === 'completed' && analysis.displacement_map_url" class="mt-6">
+              <v-row v-if="analysis.status === 'completed' && analysis.images?.displacement_map_url" class="mt-6">
                 <v-col cols="12">
                   <div class="text-h6 mb-4">Displacement Map</div>
                   <v-img
-                    :src="analysis.displacement_map_url"
+                    :src="analysis.images.displacement_map_url"
                     max-height="400"
                     contain
                     class="rounded border"
@@ -500,13 +500,81 @@ onMounted(() => {
 <style scoped>
 .analysis-detail {
   padding: 24px;
+  font-family: 'Montserrat', 'Arial', 'Helvetica', sans-serif;
+  background: #c4b8a5;
+  min-height: 100vh;
 }
 
 .border {
-  border: 1px solid rgba(0, 0, 0, 0.12);
+  border: 1px solid #b8aa95 !important;
 }
 
 .gap-2 {
   gap: 8px;
+}
+
+.text-h4, .text-h6 {
+  font-family: 'Montserrat', 'Arial', 'Helvetica', sans-serif;
+  font-weight: 700;
+  color: #2c2c2c;
+}
+
+.text-caption {
+  font-family: 'Montserrat', 'Arial', 'Helvetica', sans-serif;
+  color: #6b5e4a;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 0.7rem !important;
+  font-weight: 700;
+}
+
+.v-card {
+  background: #f0ebe0 !important;
+  border: 1px solid #b8aa95 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.v-card-title {
+  font-family: 'Montserrat', 'Arial', 'Helvetica', sans-serif;
+  font-weight: 700;
+  color: #2c2c2c;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid #b8aa95;
+  padding-bottom: 0.5rem;
+}
+
+.v-chip {
+  font-family: 'Montserrat', 'Arial', 'Helvetica', sans-serif;
+  border-radius: 0 !important;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 0.7rem !important;
+}
+
+.text-body-1 {
+  font-family: 'Montserrat', 'Arial', 'Helvetica', sans-serif;
+  color: #2c2c2c;
+}
+
+.text-body-2 {
+  font-family: 'Montserrat', 'Arial', 'Helvetica', sans-serif;
+  color: #6b5e4a;
+  font-size: 0.8rem !important;
+}
+
+.v-progress-circular {
+  color: #2c2c2c !important;
+}
+
+.text-error {
+  color: #8b3a3a !important;
+}
+
+.text-grey-darken-1 {
+  color: #6b5e4a !important;
 }
 </style>
