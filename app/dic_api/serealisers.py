@@ -75,12 +75,22 @@ class AnalysisImagesSerializer(serializers.ModelSerializer):
 
     def get_image_before_url(self, obj):
         if obj.image_before:
-            return f'/media/{obj.image_before.name}'
+            path = obj.image_before.name
+            if path:
+                png_path = path.rsplit('.', 1)[0] + '.png'
+                if os.path.exists(os.path.join(settings.MEDIA_ROOT, png_path.lstrip('/'))):
+                    return f'/media/{png_path}'
+            return f'/media/{path}'
         return None
 
     def get_image_after_url(self, obj):
         if obj.image_after:
-            return f'/media/{obj.image_after.name}'
+            path = obj.image_after.name
+            if path:
+                png_path = path.rsplit('.', 1)[0] + '.png'
+                if os.path.exists(os.path.join(settings.MEDIA_ROOT, png_path.lstrip('/'))):
+                    return f'/media/{png_path}'
+            return f'/media/{path}'
         return None
 
     def get_result_image_url(self, obj):
