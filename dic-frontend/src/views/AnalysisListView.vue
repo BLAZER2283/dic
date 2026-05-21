@@ -31,77 +31,6 @@
       </v-col>
     </v-row>
 
-    <!-- Filters -->
-    <v-row class="mb-6">
-      <v-col cols="12">
-        <v-card>
-          <v-card-text>
-            <v-row>
-              <v-col cols="12" md="3">
-                <v-text-field
-                  v-model="searchQuery"
-                  label="Search"
-                  prepend-inner-icon="mdi-magnify"
-                  clearable
-                  hide-details
-                  @input="debouncedSearch"
-                />
-              </v-col>
-
-              <v-col cols="12" md="2">
-                <v-select
-                  v-model="statusFilter"
-                  :items="statusOptions"
-                  label="Status"
-                  clearable
-                  hide-details
-                />
-              </v-col>
-
-              <v-col cols="12" md="2">
-                <v-select
-                  v-model="hasResultsFilter"
-                  :items="resultsOptions"
-                  label="Results"
-                  clearable
-                  hide-details
-                />
-              </v-col>
-
-              <v-col cols="12" md="2">
-                <v-text-field
-                  v-model="dateFrom"
-                  label="From Date"
-                  type="date"
-                  hide-details
-                />
-              </v-col>
-
-              <v-col cols="12" md="2">
-                <v-text-field
-                  v-model="dateTo"
-                  label="To Date"
-                  type="date"
-                  hide-details
-                />
-              </v-col>
-
-              <v-col cols="12" md="1" class="d-flex align-end">
-                <v-btn
-                  variant="text"
-                  @click="clearFilters"
-                  color="grey-darken-1"
-                  size="small"
-                >
-                  Clear
-                </v-btn>
-              </v-col>
-            </v-row>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
-
     <!-- Bulk Actions -->
     <v-row v-if="selected.length > 0" class="mb-4">
       <v-col cols="12">
@@ -277,7 +206,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useAnalysisStore } from '@/stores/analysis'
 import type { DICAnalysis } from '@/types/api'
 
@@ -287,7 +216,6 @@ const analysisStore = useAnalysisStore()
 const selected = ref<DICAnalysis[]>([])
 const showBulkDeleteDialog = ref(false)
 const bulkDeleting = ref(false)
-const searchTimeout = ref<NodeJS.Timeout | null>(null)
 
 // Computed
 const analyses = computed(() => analysisStore.analyses)
@@ -300,41 +228,6 @@ const totalPages = computed(() => Math.ceil(totalCount.value / pageSize.value))
 const startItem = computed(() => (currentPage.value - 1) * pageSize.value + 1)
 const endItem = computed(() => Math.min(currentPage.value * pageSize.value, totalCount.value))
 
-const searchQuery = computed({
-  get: () => analysisStore.searchQuery,
-  set: (value) => analysisStore.setSearchQuery(value)
-})
-
-const statusFilter = computed({
-  get: () => analysisStore.statusFilter,
-  set: (value) => analysisStore.setStatusFilter(value)
-})
-
-const hasResultsFilter = computed({
-  get: () => analysisStore.hasResultsFilter,
-  set: (value) => analysisStore.setHasResultsFilter(value)
-})
-
-const dateFrom = computed({
-  get: () => analysisStore.dateFrom,
-  set: (value) => {
-    analysisStore.dateFrom = value
-    if (value && analysisStore.dateTo) {
-      analysisStore.setDateRange(value, analysisStore.dateTo)
-    }
-  }
-})
-
-const dateTo = computed({
-  get: () => analysisStore.dateTo,
-  set: (value) => {
-    analysisStore.dateTo = value
-    if (value && analysisStore.dateFrom) {
-      analysisStore.setDateRange(analysisStore.dateFrom, value)
-    }
-  }
-})
-
 // Data table headers
 const headers = [
   { title: 'Name', key: 'name', width: '25%' },
@@ -343,20 +236,6 @@ const headers = [
   { title: 'Processing Time', key: 'processing_time', width: '15%', sortable: true },
   { title: 'Max Displacement', key: 'max_displacement', width: '15%', sortable: true },
   { title: 'Actions', key: 'actions', width: '10%', sortable: false },
-]
-
-// Options for filters
-const statusOptions = [
-  { title: 'Pending', value: 'pending' },
-  { title: 'Processing', value: 'processing' },
-  { title: 'Completed', value: 'completed' },
-  { title: 'Error', value: 'error' },
-  { title: 'Cancelled', value: 'cancelled' },
-]
-
-const resultsOptions = [
-  { title: 'Has Results', value: true },
-  { title: 'No Results', value: false },
 ]
 
 // Methods
@@ -374,15 +253,6 @@ const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleString()
 }
 
-const debouncedSearch = () => {
-  if (searchTimeout.value) {
-    clearTimeout(searchTimeout.value)
-  }
-  searchTimeout.value = setTimeout(() => {
-    analysisStore.fetchAnalyses(1)
-  }, 500)
-}
-
 const refreshData = () => {
   analysisStore.fetchAnalyses(currentPage.value)
 }
@@ -395,11 +265,6 @@ const handlePagination = (options: any) => {
 
 const goToPage = (page: number) => {
   analysisStore.goToPage(page)
-}
-
-const clearFilters = () => {
-  analysisStore.clearFilters()
-  selected.value = []
 }
 
 const cancelAnalysis = async (id: string) => {
@@ -439,12 +304,6 @@ const executeBulkDelete = async () => {
 // Lifecycle
 onMounted(() => {
   analysisStore.fetchAnalyses()
-})
-
-// Watch for filter changes
-watch([statusFilter, hasResultsFilter], () => {
-  analysisStore.fetchAnalyses(1)
-  selected.value = []
 })
 </script>
 

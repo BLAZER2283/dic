@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { ref, computed } from 'vue';
+import { ref } from 'vue';
 import type {
   DICAnalysis,
   DICAnalysisStats,
@@ -24,30 +24,6 @@ export const useAnalysisStore = defineStore('analysis', () => {
   const hasNextPage = ref(false);
   const hasPreviousPage = ref(false);
 
-  // Filters
-  const statusFilter = ref<string>('');
-  const searchQuery = ref<string>('');
-  const dateFrom = ref<string>('');
-  const dateTo = ref<string>('');
-  const hasResultsFilter = ref<boolean | null>(null);
-
-  // Computed
-  const completedAnalyses = computed(() =>
-    analyses.value.filter(analysis => analysis.status === 'completed')
-  );
-
-  const processingAnalyses = computed(() =>
-    analyses.value.filter(analysis => analysis.status === 'processing')
-  );
-
-  const pendingAnalyses = computed(() =>
-    analyses.value.filter(analysis => analysis.status === 'pending')
-  );
-
-  const errorAnalyses = computed(() =>
-    analyses.value.filter(analysis => analysis.status === 'error')
-  );
-
   // Actions
   async function fetchAnalyses(page = 1) {
     loading.value = true;
@@ -58,12 +34,6 @@ export const useAnalysisStore = defineStore('analysis', () => {
         page,
         page_size: pageSize.value,
       };
-
-      if (statusFilter.value) params.status = statusFilter.value;
-      if (searchQuery.value) params.search = searchQuery.value;
-      if (dateFrom.value) params.date_from = dateFrom.value;
-      if (dateTo.value) params.date_to = dateTo.value;
-      if (hasResultsFilter.value !== null) params.has_results = hasResultsFilter.value;
 
       const response = await apiService.getAnalyses(params);
 
@@ -231,37 +201,6 @@ export const useAnalysisStore = defineStore('analysis', () => {
     }
   }
 
-  // Filter actions
-  function setStatusFilter(status: string) {
-    statusFilter.value = status;
-    fetchAnalyses(1);
-  }
-
-  function setSearchQuery(query: string) {
-    searchQuery.value = query;
-    fetchAnalyses(1);
-  }
-
-  function setDateRange(from: string, to: string) {
-    dateFrom.value = from;
-    dateTo.value = to;
-    fetchAnalyses(1);
-  }
-
-  function setHasResultsFilter(hasResults: boolean | null) {
-    hasResultsFilter.value = hasResults;
-    fetchAnalyses(1);
-  }
-
-  function clearFilters() {
-    statusFilter.value = '';
-    searchQuery.value = '';
-    dateFrom.value = '';
-    dateTo.value = '';
-    hasResultsFilter.value = null;
-    fetchAnalyses(1);
-  }
-
   // Pagination actions
   function nextPage() {
     if (hasNextPage.value) {
@@ -295,19 +234,6 @@ export const useAnalysisStore = defineStore('analysis', () => {
     hasNextPage,
     hasPreviousPage,
 
-    // Filters
-    statusFilter,
-    searchQuery,
-    dateFrom,
-    dateTo,
-    hasResultsFilter,
-
-    // Computed
-    completedAnalyses,
-    processingAnalyses,
-    pendingAnalyses,
-    errorAnalyses,
-
     // Actions
     fetchAnalyses,
     fetchAnalysis,
@@ -318,13 +244,6 @@ export const useAnalysisStore = defineStore('analysis', () => {
     fetchStats,
     fetchSummary,
     bulkDeleteAnalyses,
-
-    // Filter actions
-    setStatusFilter,
-    setSearchQuery,
-    setDateRange,
-    setHasResultsFilter,
-    clearFilters,
 
     // Pagination actions
     nextPage,
