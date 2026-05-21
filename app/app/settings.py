@@ -36,7 +36,7 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
-    "app.middleware.DisableCSRFMiddleware",
+    # "app.middleware.DisableCSRFMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
@@ -172,7 +172,9 @@ USE_TZ = True
 STATIC_URL = "static/"
 
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOWED_ORIGINS = ["http://localhost:8080", "http://127.0.0.1:8080", "http://frontend:8080"]
+CORS_ALLOWED_ORIGINS = ["http://localhost:8080", 
+                        "http://127.0.0.1:8080", 
+                        "http://frontend:8080"]
 
 CORS_ALLOW_METHODS = ["DELETE", "GET", "OPTIONS", "PATCH", "POST", "PUT"]
 
@@ -188,7 +190,10 @@ CORS_ALLOW_HEADERS = [
     "x-requested-with",
 ]
 
-CSRF_TRUSTED_ORIGINS = ["http://localhost:8080", "http://127.0.0.1:8080", "http://frontend:8080"]
+CSRF_TRUSTED_ORIGINS = ["http://localhost:8080", 
+                        "http://127.0.0.1:8080", 
+                        "http://frontend:8080", 
+                        "http://80.78.253.70:80"]
 
 CSRF_EXEMPT_PATHS = ["/api/"]
 
