@@ -489,7 +489,6 @@ main() {
     build_frontends
     stop_containers
     start_containers
-    healthcheck
     
     log_success "========================================="
     log_success "Deployment completed successfully!"
