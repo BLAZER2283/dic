@@ -56,6 +56,7 @@ const App = () => {
   const [calcId, setCalcId] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState(null);
+  const [showUserMenu, setShowUserMenu] = useState(false);
 
   const decodeTokenPayload = (token) => {
     try {
@@ -72,13 +73,62 @@ const App = () => {
   const getUsernameFromToken = (token) => {
     const payload = decodeTokenPayload(token);
     if (!payload) return null;
-    return payload.username || payload.user?.username || payload.email || null;
+    return (
+      payload.username ||
+      payload.preferred_username ||
+      payload.user?.username ||
+      payload.email ||
+      payload.name ||
+      null
+    );
+  };
+
+  const fetchCurrentUser = async () => {
+    try {
+      const response = await axios.get('/api/auth/me/');
+      if (response.data?.username) {
+        setUsername(response.data.username);
+        return;
+      }
+      if (response.data?.user?.username) {
+        setUsername(response.data.user.username);
+        return;
+      }
+    } catch (err) {
+      // ignore; fallback to token decode below
+    }
+
+    const token = localStorage.getItem('access_token');
+    setUsername(token ? getUsernameFromToken(token) : null);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    setIsAuthenticated(false);
+    setUsername(null);
+    setShowUserMenu(false);
+    window.location.href = '/dic/login';
+  };
+
+  const toggleUserMenu = (event) => {
+    event.stopPropagation();
+    setShowUserMenu((prev) => !prev);
   };
 
   useEffect(() => {
     const token = localStorage.getItem('access_token');
     setIsAuthenticated(!!token);
-    setUsername(token ? getUsernameFromToken(token) : null);
+
+    const initAuth = async () => {
+      if (token) {
+        await fetchCurrentUser();
+      } else {
+        setUsername(null);
+      }
+    };
+
+    initAuth();
 
     const path = window.location.pathname;
     const match = path.match(/\/ucrp\/(\d+)/);
@@ -90,6 +140,20 @@ const App = () => {
       loadHistory();
     }
   }, []);
+
+  useEffect(() => {
+    const handleDocumentClick = (event) => {
+      const target = event.target;
+      if (showUserMenu && !target.closest('.user-menu-wrapper')) {
+        setShowUserMenu(false);
+      }
+    };
+
+    window.addEventListener('click', handleDocumentClick);
+    return () => {
+      window.removeEventListener('click', handleDocumentClick);
+    };
+  }, [showUserMenu]);
 
   const fetchCalculationById = async (id) => {
     setLoading(true);
@@ -266,13 +330,26 @@ const App = () => {
             <h1>Plasma Optimizer</h1>
             <p>Автоматизация расчёта оптимальных параметров Установки Центробежного Распыления (УЦР)</p>
           </div>
-          <div style={{ display: 'flex', gap: '10px' }}>
+          <div style={{ display: 'flex', gap: '10px', position: 'relative' }}>
             {isAuthenticated ? (
-              <a href="/dic/" target="_blank" style={{ color: '#fff', textDecoration: 'none' }}>
-                <button className="btn-secondary" style={{ padding: '8px 16px', fontSize: '14px' }}>
+              <div className="user-menu-wrapper" style={{ position: 'relative' }}>
+                <button
+                  type="button"
+                  className="btn-secondary btn-user"
+                  style={{ padding: '8px 16px', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                  onClick={toggleUserMenu}
+                >
                   {username || 'ADMIN'}
+                  <span style={{ fontSize: '12px' }}>▾</span>
                 </button>
-              </a>
+                {showUserMenu && (
+                  <div className="user-menu-dropdown">
+                    <button type="button" className="user-menu-item" onClick={handleLogout}>
+                      Выйти
+                    </button>
+                  </div>
+                )}
+              </div>
             ) : (
               <a href="/dic/login" target="_blank" style={{ color: '#fff', textDecoration: 'none' }}>
                 <button className="btn-secondary" style={{ padding: '8px 16px', fontSize: '14px' }}>
