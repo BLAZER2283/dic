@@ -5,8 +5,8 @@
       <p>Загрузите два изображения и настройте параметры для анализа DIC</p>
     </div>
 
-    <v-row>
-      <v-col cols="12" lg="8">
+    <v-row class="page-grid">
+      <v-col cols="12" lg="5">
         <v-card>
           <v-card-title class="section-title">
             <v-icon left class="section-icon">mdi-image-outline</v-icon>
@@ -154,28 +154,75 @@
         </v-card>
       </v-col>
 
-      <v-col cols="12" lg="4">
-        <v-card class="info-card">
-          <v-card-title class="section-title">
-            <v-icon left class="section-icon">mdi-information-outline</v-icon>
-            О DIC анализе
-          </v-card-title>
-          <v-card-text>
-            <div class="info-text">
-              <strong>Что такое DIC?</strong>
-              <p>Цифровая корреляция изображений (DIC) — бесконтактный оптический метод измерения деформаций и напряжений на поверхности.</p>
+      <v-col cols="12" lg="7">
+        <div class="analysis-panel">
+          <div class="analysis-header">
+            <div>
+              <h2>Последние анализы</h2>
+              <p>Листайте, выбирайте и переходите к деталям анализа.</p>
             </div>
-            <div class="info-divider"></div>
-            <div class="info-text">
-              <strong>Требования к изображениям:</strong>
-              <ul>
-                <li>Одинаковые условия освещения</li>
-                <li>Хороший контраст и текстура</li>
-                <li>Минимальная деформация</li>
-              </ul>
+            <v-btn variant="outlined" class="btn-secondary" @click="refreshAnalyses" :loading="analysisStore.loading">
+              Обновить
+            </v-btn>
+          </div>
+
+          <div class="kpi-grid summary-grid">
+            <div class="kpi-card">
+              <div class="kpi-label">Всего</div>
+              <div class="kpi-value">{{ analysisStats.total }}</div>
+              <div class="kpi-sub">анализов</div>
             </div>
-          </v-card-text>
-        </v-card>
+            <div class="kpi-card">
+              <div class="kpi-label">Завершено</div>
+              <div class="kpi-value text-green">{{ analysisStats.completed }}</div>
+              <div class="kpi-sub">успешно</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">В процессе</div>
+              <div class="kpi-value text-yellow">{{ analysisStats.processing }}</div>
+              <div class="kpi-sub">обрабатывается</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Ошибки</div>
+              <div class="kpi-value text-red">{{ analysisStats.error }}</div>
+              <div class="kpi-sub">требуют внимания</div>
+            </div>
+          </div>
+
+          <div class="analysis-list-panel">
+            <template v-if="analysisStore.loading">
+              <div class="loading-panel">
+                <div class="spinner"></div>
+                <div class="loading-text">Загрузка анализов...</div>
+              </div>
+            </template>
+
+            <template v-else-if="latestAnalyses.length === 0">
+              <div class="empty-panel">
+                <p>Список анализов пуст. Создайте первый анализ слева.</p>
+              </div>
+            </template>
+
+            <template v-else>
+              <div class="analysis-list-items">
+                <div
+                  v-for="analysis in latestAnalyses"
+                  :key="analysis.id"
+                  class="analysis-item"
+                  @click="openAnalysis(analysis.id)">
+                  <div class="analysis-item-top">
+                    <div class="analysis-title">{{ analysis.name }}</div>
+                    <div :class="['status-chip', getStatusClass(analysis.status)]">{{ analysis.status_display || analysis.status }}</div>
+                  </div>
+                  <div class="analysis-item-details">
+                    <span>Дата: {{ formatDate(analysis.created_at) }}</span>
+                    <span>Время: {{ analysis.processing_time ? analysis.processing_time.toFixed(1) + 's' : '–' }}</span>
+                  </div>
+                </div>
+              </div>
+            </template>
+          </div>
+        </div>
       </v-col>
     </v-row>
   </div>
@@ -261,6 +308,39 @@ const estimatedTime = computed(() => {
   const estimated = baseTime * sizeFactor * iterFactor * stepFactor
   return `${Math.round(estimated)}s - ${Math.round(estimated * 1.5)}s`
 })
+
+const analysisStats = computed(() => {
+  const list = analysisStore.analyses
+  const total = list.length
+  const completed = list.filter(item => item.status === 'completed').length
+  const processing = list.filter(item => item.status === 'processing').length
+  const error = list.filter(item => ['failed', 'error', 'cancelled'].includes(item.status)).length
+  return { total, completed, processing, error }
+})
+
+const latestAnalyses = computed(() => analysisStore.analyses.slice(0, 10))
+
+const getStatusClass = (status: string) => {
+  if (!status) return 'status-default'
+  if (status === 'completed') return 'status-success'
+  if (status === 'processing') return 'status-warning'
+  if (status === 'failed' || status === 'error' || status === 'cancelled') return 'status-danger'
+  return 'status-default'
+}
+
+const formatDate = (value: string | undefined) => {
+  if (!value) return '–'
+  const date = new Date(value)
+  return date.toLocaleString('ru-RU', { dateStyle: 'short', timeStyle: 'short' })
+}
+
+const openAnalysis = (id: string) => {
+  router.push(`/analyses/${id}`)
+}
+
+const refreshAnalyses = () => {
+  analysisStore.fetchAnalyses(1)
+}
 
 // Methods
 const handleFileSelect = (type: 'before' | 'after', event: Event) => {
@@ -401,6 +481,7 @@ const submitForm = async () => {
 onMounted(() => {
   const now = new Date()
   formData.name = `DIC Analysis ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`
+  analysisStore.fetchAnalyses(1)
 })
 </script>
 
@@ -535,6 +616,137 @@ onMounted(() => {
   height: 2px;
   background: #b8aa95;
   margin: 24px 0;
+}
+
+.analysis-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.analysis-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.analysis-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #2c2c2c;
+}
+
+.analysis-header p {
+  margin: 6px 0 0;
+  color: #6b5e4a;
+  font-size: 0.9rem;
+}
+
+.summary-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.analysis-list-panel {
+  background: #f7f2e8;
+  border: 1px solid #d2c5af;
+  padding: 16px;
+  min-height: 360px;
+}
+
+.analysis-list-items {
+  display: grid;
+  gap: 12px;
+}
+
+.analysis-item {
+  padding: 16px;
+  background: #fff;
+  border: 1px solid #d6c9b4;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.analysis-item:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+
+.analysis-item-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.analysis-title {
+  font-weight: 700;
+  color: #2c2c2c;
+}
+
+.analysis-item-details {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+  color: #6b5e4a;
+  margin-top: 10px;
+}
+
+.status-chip {
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.status-success {
+  background: #d4f2da;
+  color: #1f5d30;
+}
+
+.status-warning {
+  background: #fff4d9;
+  color: #7c5c19;
+}
+
+.status-danger {
+  background: #f4d8d8;
+  color: #7a2424;
+}
+
+.status-default {
+  background: #e8e2d7;
+  color: #5a4f44;
+}
+
+.loading-panel,
+.empty-panel {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 220px;
+  color: #6b5e4a;
+}
+
+.loading-text {
+  margin-left: 12px;
+  font-size: 0.95rem;
+}
+
+.spinner {
+  width: 30px;
+  height: 30px;
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-top-color: #2c2c2c;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 .form-section {

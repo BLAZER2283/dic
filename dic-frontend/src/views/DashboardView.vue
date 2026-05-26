@@ -109,7 +109,7 @@ onMounted(async () => {
 
 <style scoped>
 .dashboard {
-  padding: 24px;
+  padding: 1.5rem;
   max-width: 1200px;
   margin: 0 auto;
   font-family: 'Montserrat', 'Arial', 'Helvetica', sans-serif;
@@ -117,21 +117,21 @@ onMounted(async () => {
 
 .dashboard-header {
   margin-bottom: 24px;
-  padding-bottom: 16px;
+  padding: 1.5rem 0 1rem;
   border-bottom: 2px solid #b8aa95;
 }
 
 .dashboard-header h1 {
-  font-size: 1.5rem;
+  font-size: 2rem;
   font-weight: 700;
   color: #2c2c2c;
   text-transform: uppercase;
   letter-spacing: 1px;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 
 .dashboard-header p {
-  font-size: 0.9rem;
+  font-size: 1rem;
   color: #6b5e4a;
   font-weight: 400;
 }
