@@ -54,8 +54,32 @@ const App = () => {
   const [error, setError] = useState(null);
   const [history, setHistory] = useState([]);
   const [calcId, setCalcId] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [username, setUsername] = useState(null);
+
+  const decodeTokenPayload = (token) => {
+    try {
+      const parts = token.split('.');
+      if (parts.length !== 3) return null;
+      const b = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(atob(b).split('').map(c => '%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+      return JSON.parse(jsonPayload);
+    } catch (err) {
+      return null;
+    }
+  };
+
+  const getUsernameFromToken = (token) => {
+    const payload = decodeTokenPayload(token);
+    if (!payload) return null;
+    return payload.username || payload.user?.username || payload.email || null;
+  };
 
   useEffect(() => {
+    const token = localStorage.getItem('access_token');
+    setIsAuthenticated(!!token);
+    setUsername(token ? getUsernameFromToken(token) : null);
+
     const path = window.location.pathname;
     const match = path.match(/\/ucrp\/(\d+)/);
     if (match) {
@@ -243,11 +267,19 @@ const App = () => {
             <p>Автоматизация расчёта оптимальных параметров Установки Центробежного Распыления (УЦР)</p>
           </div>
           <div style={{ display: 'flex', gap: '10px' }}>
-            <a href="/dic/login" target="_blank" style={{ color: '#fff', textDecoration: 'none' }}>
-              <button className="btn-secondary" style={{ padding: '8px 16px', fontSize: '14px' }}>
-                Войти
-              </button>
-            </a>
+            {isAuthenticated ? (
+              <a href="/dic/" target="_blank" style={{ color: '#fff', textDecoration: 'none' }}>
+                <button className="btn-secondary" style={{ padding: '8px 16px', fontSize: '14px' }}>
+                  {username || 'ADMIN'}
+                </button>
+              </a>
+            ) : (
+              <a href="/dic/login" target="_blank" style={{ color: '#fff', textDecoration: 'none' }}>
+                <button className="btn-secondary" style={{ padding: '8px 16px', fontSize: '14px' }}>
+                  Войти
+                </button>
+              </a>
+            )}
             <a href="/dic/" target="_blank" style={{ color: '#fff', textDecoration: 'none' }}>
               <button className="btn-secondary" style={{ padding: '8px 16px', fontSize: '14px' }}>
                 DIC Analyzer
