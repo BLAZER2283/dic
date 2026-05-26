@@ -3,7 +3,6 @@ from rest_framework.response import Response
 from django.utils import timezone
 from .models import EPGCalculation
 from .serealisation import EPGCalculationSerializer
-from .tasks import run_optimization
 from rest_framework.permissions import IsAuthenticated, AllowAny
 
 class EPGCalculationViewSet(viewsets.ModelViewSet):
@@ -19,9 +18,7 @@ class EPGCalculationViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
     
         calculation = serializer.save(user=request.user)
-    
-        run_optimization.delay(calculation.id)
-    
+        
         return Response(
             {"calculation_id": calculation.id, "status": "started"},
             status=status.HTTP_202_ACCEPTED)

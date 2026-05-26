@@ -19,10 +19,7 @@ DB_HOST="localhost"
 DB_PORT="5432"
 DB_NAME="dic_db"
 DB_USER="dic_user"
-SEED_ENABLE="false"
-SEED_DATA=""
-FRONTEND_PORT="5173"
-BACKEND_PORT="8000"
+
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -60,10 +57,7 @@ DEPLOY OPTIONS:
     --db-port PORT       Database port (default: 5432)
     --db-name NAME       Database name (default: dic_db)
     --db-user USER       Database user (default: dic_user)
-    --seed               Enable seed data
-    --seed-data DATA     Seed data (json string or path)
-    --frontend-port PORT Frontend port (default: 5173)
-    --backend-port PORT  Backend port (default: 8000)
+
     -h, --help          Show this help message
 
 ENVIRONMENT VARIABLES:
@@ -174,15 +168,9 @@ deploy() {
     log_success "SSH connection established"
     
     log_info "Opening firewall ports..."
-    run_remote "firewall-cmd --permanent --add-port=8080/tcp --add-port=8000/tcp --add-port=5432/tcp --add-port=6379/tcp --add-port=5555/tcp 2>/dev/null || true"
+    run_remote "firewall-cmd --permanent --add-port=80/tcp --add-port=443/tcp 2>/dev/null || true"
     run_remote "firewall-cmd --permanent --add-masquerade 2>/dev/null || true"
     run_remote "firewall-cmd --reload 2>/dev/null || true"
-    
-    log_info "Adding iptables rules for Docker..."
-    run_remote "iptables -I INPUT -p tcp --dport 8080 -j ACCEPT 2>/dev/null || true"
-    run_remote "iptables -I INPUT -p tcp --dport 8000 -j ACCEPT 2>/dev/null || true"
-    run_remote "iptables -I INPUT -p tcp --dport 5555 -j ACCEPT 2>/dev/null || true"
-    run_remote "service iptables save 2>/dev/null || true"
     
     log_info "Uploading deploy script..."
     upload_file "${SCRIPT_DIR}/${DEPLOY_SCRIPT}" "/tmp/${DEPLOY_SCRIPT}"
@@ -212,22 +200,6 @@ deploy() {
     
     if [ -n "$DB_USER" ]; then
         deploy_cmd="$deploy_cmd --db-user ${DB_USER}"
-    fi
-    
-    if [ "$SEED_ENABLE" = "true" ]; then
-        deploy_cmd="$deploy_cmd --seed"
-    fi
-    
-    if [ -n "$SEED_DATA" ]; then
-        deploy_cmd="$deploy_cmd --seed-data ${SEED_DATA}"
-    fi
-    
-    if [ -n "$FRONTEND_PORT" ]; then
-        deploy_cmd="$deploy_cmd --frontend-port ${FRONTEND_PORT}"
-    fi
-    
-    if [ -n "$BACKEND_PORT" ]; then
-        deploy_cmd="$deploy_cmd --backend-port ${BACKEND_PORT}"
     fi
     
     run_remote "$deploy_cmd"
@@ -296,22 +268,6 @@ main() {
                 ;;
             --db-user)
                 DB_USER="$2"
-                shift 2
-                ;;
-            --seed)
-                SEED_ENABLE="true"
-                shift
-                ;;
-            --seed-data)
-                SEED_DATA="$2"
-                shift 2
-                ;;
-            --frontend-port)
-                FRONTEND_PORT="$2"
-                shift 2
-                ;;
-            --backend-port)
-                BACKEND_PORT="$2"
                 shift 2
                 ;;
             -h|--help)

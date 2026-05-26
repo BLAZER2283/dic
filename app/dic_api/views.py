@@ -45,37 +45,6 @@ class AnalysisTaskViewSet(
         serializer.is_valid(raise_exception=True)
         task = serializer.save()
 
-        # Запускаем обработку в отдельном потоке
-        from .dic_bisnes_logik.help_methods import HelpMethods
-        import threading
-
-        images = task.images
-        parameters = task.parameters
-
-        # thread = threading.Thread(
-        #     target=HelpMethods()._process_dic_task,
-        #     args=(
-        #         str(task.id),
-        #         images.image_before.path,
-        #         images.image_after.path,
-        #         parameters.subset_size,
-        #         parameters.step,
-        #         parameters.max_iter,
-        #         parameters.min_correlation,
-        #     ),
-        #     daemon=True,
-        # )
-        # thread.start()
-        from .tasks import process_dic_task
-        process_dic_task.delay(
-            str(task.id),
-            images.image_before.path,
-            images.image_after.path,
-            parameters.subset_size,
-            parameters.step,
-            parameters.max_iter,
-            parameters.min_correlation,
-        )
         response_serializer = AnalysisTaskSerializer(
             task, context={"request": request}
         )

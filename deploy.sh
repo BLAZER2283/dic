@@ -17,10 +17,6 @@ DB_PORT="5432"
 DB_NAME="dic_db"
 DB_USER="dic_user"
 DB_PASSWORD=""
-DB_SEED="false"
-SEED_DATA=""
-FRONTEND_PORT="5173"
-BACKEND_PORT="8000"
 COMPOSE_FILE="docker-compose.yml"
 LOG_FILE="${SCRIPT_DIR}/deploy.log"
 
@@ -69,17 +65,12 @@ OPTIONS:
     --db-name NAME         Database name (default: dic_db)
     --db-user USER          Database user (default: dic_user)
     --db-password PASS      Database password (required)
-    --seed                 Enable seed data generation
-    --seed-data DATA       Seed data (json string or path to file)
-    --frontend-port PORT    Frontend port (default: 5173)
-    --backend-port PORT     Backend port (default: 8000)
     -h, --help             Show this help message
 
 ENVIRONMENT VARIABLES:
     GIT_REPO_URL
     DB_PASSWORD
     DB_HOST, DB_PORT, DB_NAME, DB_USER
-    SEED_DATA
 
 ARGUMENTS HAVE HIGHER PRIORITY THAN ENVIRONMENT VARIABLES
 
@@ -334,10 +325,6 @@ DB_PORT=$DB_PORT
 DB_NAME=$DB_NAME
 DB_USER=$DB_USER
 DB_PASSWORD=$DB_PASSWORD
-SEED_ENABLE=$DB_SEED
-SEED_DATA=$SEED_DATA
-FRONTEND_PORT=$FRONTEND_PORT
-BACKEND_PORT=$BACKEND_PORT
 DJANGO_SECRET_KEY=$DJANGO_SECRET_KEY
 DJANGO_DEBUG=True
 ALLOWED_HOSTS=$SERVER_HOST,localhost,127.0.0.1,backend
@@ -355,47 +342,32 @@ healthcheck() {
     log_info "Waiting for services to be ready..."
     
     local max_attempts=60
-    local attempt=0
-    local services=("backend" "frontend" "postgres")
     
-    for service in "${services[@]}"; do
-        attempt=0
-        while [ $attempt -lt $max_attempts ]; do
-            case "$service" in
-                backend)
-                    if curl -sf "http://localhost:${BACKEND_PORT}/api/" &>/dev/null; then
-                        log_success "Backend is ready"
-                        break
-                    fi
-                    ;;
-                frontend)
-                    if curl -sf "http://localhost:${FRONTEND_PORT}" &>/dev/null; then
-                        log_success "Frontend is ready"
-                        break
-                    fi
-                    ;;
-                postgres)
-                    if docker exec "${PROJECT_NAME}_postgres" pg_isready -U "$DB_USER" &>/dev/null 2>&1; then
-                        log_success "Postgres is ready"
-                        break
-                    fi
-                    ;;
-            esac
-            
-            sleep 2
-            attempt=$((attempt + 1))
-            
-            if [ $((attempt % 10)) -eq 0 ]; then
-                log_warning "Waiting for $service... ($attempt/$max_attempts)"
-            fi
-        done
-        
-        if [ $attempt -ge $max_attempts ]; then
-            log_error "$service failed to start"
-            
-            # Show logs for debugging
-            docker-compose -f "$COMPOSE_FILE" logs "$service" | tail -50
-            return 1
+    # Wait for nginx (port 80)
+    local attempt=0
+    while [ $attempt -lt $max_attempts ]; do
+        if curl -sf "http://localhost/" &>/dev/null; then
+            log_success "Nginx is ready"
+            break
+        fi
+        sleep 2
+        attempt=$((attempt + 1))
+        if [ $((attempt % 10)) -eq 0 ]; then
+            log_warning "Waiting for nginx... ($attempt/$max_attempts)"
+        fi
+    done
+    
+    # Wait for DB
+    attempt=0
+    while [ $attempt -lt $max_attempts ]; do
+        if docker-compose -f "$COMPOSE_FILE" exec -T db pg_isready -U "$DB_USER" &>/dev/null 2>&1; then
+            log_success "Postgres is ready"
+            break
+        fi
+        sleep 2
+        attempt=$((attempt + 1))
+        if [ $((attempt % 10)) -eq 0 ]; then
+            log_warning "Waiting for postgres... ($attempt/$max_attempts)"
         fi
     done
     
@@ -438,22 +410,6 @@ main() {
                 ;;
             --db-password)
                 DB_PASSWORD="$2"
-                shift 2
-                ;;
-            --seed)
-                DB_SEED="true"
-                shift
-                ;;
-            --seed-data)
-                SEED_DATA="$2"
-                shift 2
-                ;;
-            --frontend-port)
-                FRONTEND_PORT="$2"
-                shift 2
-                ;;
-            --backend-port)
-                BACKEND_PORT="$2"
                 shift 2
                 ;;
             --server-host)

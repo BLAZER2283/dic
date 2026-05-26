@@ -4,11 +4,6 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    env:
-      SERVER_IP: ${{ secrets.SERVER_IP }}
-      SERVER_USER: ${{ secrets.SERVER_USER }}
-      GIT_REPO_URL: ${{ secrets.GIT_REPO_URL }}
-      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -17,12 +12,14 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts 2>/dev/null
-      - name: Copy files to server
-        run: scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa -r . $SERVER_USER@$SERVER_IP:/root/projects/dic/
-      - name: Run deploy script
+          ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
+      - name: Run deploy on server
+        env:
+          SERVER_IP: ${{ secrets.SERVER_IP }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
         run: |
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa $SERVER_USER@$SERVER_IP "
-            cd /root/projects/dic && chmod +x remote-deploy.sh && 
-            ./remote-deploy.sh --host $SERVER_IP --key ~/.ssh/github_actions_key --repo $GIT_REPO_URL --db-password '$DB_PASSWORD'
+          ssh $SERVER_USER@$SERVER_IP "
+            cd /root/projects/dic && chmod +x deploy.sh &&
+            ./deploy.sh --repo https://github.com/BLAZER2283/dic --server-host $SERVER_IP --db-password '$DB_PASSWORD'
           "
