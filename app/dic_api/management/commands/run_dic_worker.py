@@ -37,9 +37,11 @@ class Command(BaseCommand):
                             # обновляем изображения
                             if 'image_paths' in results:
                                 paths = results['image_paths']
-                                images.original_image_path = paths.get('original_image', '')
-                                images.deformed_image_path = paths.get('deformed_image', '')
-                                images.displacement_map_path = paths.get('displacement_map', '')
+                                for key in ('original_image', 'deformed_image', 'displacement_map'):
+                                    val = paths.get(key, '')
+                                    if val.startswith('media/'):
+                                        val = val[6:]
+                                    setattr(images, f'{key}_path', val)
                                 images.save()
                             # обновляем результаты
                             if hasattr(task, 'results') and 'statistics' in results:

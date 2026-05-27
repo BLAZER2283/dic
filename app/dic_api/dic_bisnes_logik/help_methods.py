@@ -50,9 +50,11 @@ class HelpMethods:
                     images = task.images
                     if "image_paths" in results:
                         image_paths = results["image_paths"]
-                        images.original_image_path = image_paths.get("original_image", "")
-                        images.deformed_image_path = image_paths.get("deformed_image", "")
-                        images.displacement_map_path = image_paths.get("displacement_map", "")
+                        for key in ("original_image", "deformed_image", "displacement_map"):
+                            val = image_paths.get(key, "")
+                            if val.startswith("media/"):
+                                val = val[6:]
+                            setattr(images, f"{key}_path", val)
                         images.save()
 
                 # Обновляем результаты (AnalysisResults)
