@@ -19,3 +19,4 @@ drf-spectacular[sidecar]
 python-dotenv==1.0.1
 pytest
 gunicorn==23.0.0
+whitenoise==6.8.2
