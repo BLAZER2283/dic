@@ -29,7 +29,7 @@ jobs:
           SERVER_USER: ${{ secrets.SERVER_USER }}
         run: |
           ssh $SERVER_USER@$SERVER_IP "mkdir -p /root/projects/dic"
-          scp -r dic/. $SERVER_USER@$SERVER_IP:/root/projects/dic/
+          scp -r . $SERVER_USER@$SERVER_IP:/root/projects/dic/
 
       - name: Run deploy on server
         env:

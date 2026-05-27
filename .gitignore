@@ -139,6 +139,7 @@ run_system.py
 setup.py
 
 test*.html
+remote-deploy.log
 
 Sample3/
 
