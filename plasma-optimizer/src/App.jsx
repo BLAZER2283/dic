@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -55,6 +55,7 @@ const App = () => {
   const [history, setHistory] = useState([]);
   const [calcId, setCalcId] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const pollingRef = useRef(null);
   const [username, setUsername] = useState(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
 
@@ -142,6 +143,15 @@ const App = () => {
   }, []);
 
   useEffect(() => {
+    return () => {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     const handleDocumentClick = (event) => {
       const target = event.target;
       if (showUserMenu && !target.closest('.user-menu-wrapper')) {
@@ -155,11 +165,36 @@ const App = () => {
     };
   }, [showUserMenu]);
 
+  const startPolling = (id) => {
+    if (pollingRef.current) clearInterval(pollingRef.current);
+    pollingRef.current = setInterval(async () => {
+      try {
+        const res = await axios.get(`/api/calculations/${id}/`);
+        if (res.data?.results) {
+          setResult(res.data);
+          setLoading(false);
+          clearInterval(pollingRef.current);
+          pollingRef.current = null;
+        }
+      } catch (e) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = null;
+        setLoading(false);
+      }
+    }, 2000);
+  };
+
   const fetchCalculationById = async (id) => {
     setLoading(true);
+    setError(null);
     try {
       const res = await axios.get(`/api/calculations/${id}/`);
       setResult(res.data);
+      if (res.data.results) {
+        setLoading(false);
+        return;
+      }
+      startPolling(id);
       if (res.data.material) {
         setParams({
           material: res.data.material,
@@ -181,7 +216,6 @@ const App = () => {
       }
     } catch (err) {
       setError('Расчёт не найден');
-    } finally {
       setLoading(false);
     }
   };
@@ -270,8 +304,11 @@ const App = () => {
       const response = await axios.post('/api/calculations/', params, {
         headers: { 'Content-Type': 'application/json' }
       });
-      setResult(response.data);
-      setCalcId(response.data.calculation_id);
+      const newId = response.data.calculation_id;
+      window.history.pushState(null, '', `/ucrp/${newId}`);
+      setCalcId(newId);
+      setResult(null);
+      startPolling(newId);
       try {
         const h = await axios.get('/api/ucrp/calculations/');
         setHistory(Array.isArray(h.data) ? h.data : h.data.results || []);
@@ -289,7 +326,6 @@ const App = () => {
       } else {
         setError(err.message);
       }
-    } finally {
       setLoading(false);
     }
   };
@@ -506,14 +542,16 @@ const App = () => {
               </div>
             )}
             
-            {loading && (
+            {loading && !result?.results && (
               <div className="loading">
                 <div className="spinner"></div>
-                <p style={{ marginTop: '12px' }}>Идёт расчёт...</p>
+                <p style={{ marginTop: '12px' }}>
+                  {result ? 'Расчёт выполняется...' : 'Идёт расчёт...'}
+                </p>
               </div>
             )}
             
-            {result && resData && (
+            {result?.results && resData && (
               <>
                 {calcId && (
                   <div style={{ marginBottom: '12px', fontSize: '14px', color: '#6b5e4a' }}>
