@@ -9,5 +9,4 @@ router.register(r'calculations', EPGCalculationViewSet, basename='calculation')
 
 urlpatterns = [
     path('', include(router.urls)),
-
 ]
