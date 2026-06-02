@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import DashboardView from '@/views/DashboardView.vue'
+import ModuleSelectView from '@/views/ModuleSelectView.vue'
 import AnalysisListView from '@/views/AnalysisListView.vue'
 import AnalysisCreateView from '@/views/AnalysisCreateView.vue'
 import AnalysisDetailView from '@/views/AnalysisDetailView.vue'
@@ -13,6 +14,14 @@ const router = createRouter({
     // Auth маршруты из отдельного модуля
     ...authRoutes,
     
+    // Выбор модуля после авторизации
+    {
+      path: '/module-select',
+      name: 'module-select',
+      component: ModuleSelectView,
+      meta: { title: 'Выбор модуля', requiresAuth: true }
+    },
+
     // Основные маршруты приложения
     {
       path: '/',

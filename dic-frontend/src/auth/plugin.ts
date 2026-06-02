@@ -28,8 +28,7 @@ export function setupAuthGuard(router: any) {
 
     // Если маршрут требует авторизации (по умолчанию все кроме requiresGuest)
     if (to.meta.requiresGuest && authStore.isAuthenticated) {
-      // Авторизованный пользователь не должен видеть login/register
-      next({ path: '/' });
+      next({ path: '/module-select' });
     } else if (!to.meta.requiresGuest && !authStore.isAuthenticated && to.path !== '/login' && to.path !== '/register') {
       // Неавторизованный пользователь должен идти на login
       next({ path: '/login', query: { redirect: to.fullPath } });

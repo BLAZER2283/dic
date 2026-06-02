@@ -129,7 +129,7 @@ const handleRegister = async () => {
 
   try {
     await authStore.register(registerData);
-    router.push('/');
+    router.push('/module-select');
   } catch (err: any) {
     // Error already set in store
   }

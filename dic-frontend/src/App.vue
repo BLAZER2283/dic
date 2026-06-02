@@ -1,18 +1,23 @@
 <template>
   <v-app class="app">
-    <AppNavigation />
+    <AppNavigation v-if="showHeaderFooter" />
 
     <v-main>
       <router-view />
     </v-main>
 
-    <AppFooter />
+    <AppFooter v-if="showHeaderFooter" />
   </v-app>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
 import AppNavigation from '@/components/AppNavigation.vue'
 import AppFooter from '@/components/AppFooter.vue'
+
+const route = useRoute()
+const showHeaderFooter = computed(() => route.name !== 'module-select')
 </script>
 
 <style>
