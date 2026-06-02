@@ -89,7 +89,7 @@ check_dependencies() {
     
     local missing_deps=()
     
-    for cmd in curl git; do
+    for cmd in curl git envsubst; do
         if ! command -v "$cmd" &> /dev/null; then
             missing_deps+=("$cmd")
         fi
@@ -116,6 +116,9 @@ check_dependencies() {
                             git)
                                 sudo apt-get install -y git
                                 ;;
+                            envsubst)
+                                sudo apt-get install -y gettext-base
+                                ;;
                         esac
                     done
                     ;;
@@ -129,6 +132,9 @@ check_dependencies() {
                                 sudo dnf install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y
                                 sudo systemctl start docker
                                 sudo systemctl enable docker
+                                ;;
+                            envsubst)
+                                sudo dnf install -y gettext
                                 ;;
                             *)
                                 sudo dnf install -y "$dep"
@@ -329,6 +335,14 @@ DJANGO_SECRET_KEY=$DJANGO_SECRET_KEY
 DJANGO_DEBUG=True
 ALLOWED_HOSTS=$SERVER_HOST,localhost,127.0.0.1,backend
 EOF
+    fi
+    
+    # Generate nginx config with server IP
+    if [ -n "$SERVER_HOST" ]; then
+        log_info "Generating nginx config with BACKEND_HOST=$SERVER_HOST..."
+        export BACKEND_HOST=$SERVER_HOST
+        envsubst '${BACKEND_HOST}' < nginx/site.conf.template > nginx/site.conf
+        log_success "nginx config generated"
     fi
     
     # Build and start containers
