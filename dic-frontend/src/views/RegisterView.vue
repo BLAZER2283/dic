@@ -81,7 +81,7 @@
               <!-- Login link -->
               <div class="text-center mt-4">
                 <span class="text-grey-darken-1">Уже есть аккаунт? </span>
-                <router-link to="/login" class="text-primary text-decoration-none">
+                <router-link to="/auth" class="text-primary text-decoration-none">
                   Войти
                 </router-link>
               </div>
@@ -129,7 +129,7 @@ const handleRegister = async () => {
 
   try {
     await authStore.register(registerData);
-    router.push('/module-select');
+    router.push('/');
   } catch (err: any) {
     // Error already set in store
   }

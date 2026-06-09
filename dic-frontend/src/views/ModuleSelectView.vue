@@ -7,7 +7,7 @@
       </div>
 
       <div class="modules-grid">
-        <router-link to="/" class="module-card module-card--dic">
+        <router-link to="/dic" class="module-card module-card--dic">
           <div class="module-icon">
             <v-icon size="64" color="#2c2c2c">mdi-image-multiple-outline</v-icon>
           </div>

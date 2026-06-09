@@ -59,7 +59,7 @@ class ApiService {
           // Handle unauthorized access - используем auth store для очистки
           const authStore = useAuthStore();
           authStore.clearAuth();
-          window.location.href = '/login';
+          window.location.href = '/auth';
         }
         return Promise.reject(error);
       }

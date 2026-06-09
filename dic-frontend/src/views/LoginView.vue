@@ -93,7 +93,7 @@ const handleLogin = async () => {
 
   try {
     await authStore.login(loginData);
-    router.push('/module-select');
+    router.push('/');
   } catch (err: any) {}
 };
 </script>

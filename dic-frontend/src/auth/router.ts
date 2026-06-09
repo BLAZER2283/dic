@@ -4,7 +4,7 @@ import RegisterView from '../views/RegisterView.vue';
 
 const authRoutes: RouteRecordRaw[] = [
   {
-    path: '/login',
+    path: '/auth',
     name: 'login',
     component: LoginView,
     meta: { title: 'Вход', requiresGuest: true },

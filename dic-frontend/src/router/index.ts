@@ -14,9 +14,9 @@ const router = createRouter({
     // Auth маршруты из отдельного модуля
     ...authRoutes,
     
-    // Выбор модуля после авторизации
+    // Главная страница — выбор модуля
     {
-      path: '/module-select',
+      path: '/',
       name: 'module-select',
       component: ModuleSelectView,
       meta: { title: 'Выбор модуля', requiresAuth: true }
@@ -24,7 +24,7 @@ const router = createRouter({
 
     // Основные маршруты приложения
     {
-      path: '/',
+      path: '/dic',
       name: 'dashboard',
       component: DashboardView,
       meta: { title: 'Dashboard', requiresAuth: true }

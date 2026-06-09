@@ -81,7 +81,7 @@
               <!-- Login link -->
               <div class="text-center mt-4">
                 <span class="text-grey-darken-1">Уже есть аккаунт? </span>
-                <router-link to="/login" class="text-primary text-decoration-none">
+                <router-link to="/auth" class="text-primary text-decoration-none">
                   Войти
                 </router-link>
               </div>

@@ -55,7 +55,7 @@
     <template v-else>
       <v-btn
         variant="outlined"
-        @click="$router.push('/login')"
+        @click="$router.push('/auth')"
         class="nav-btn"
       >
         <v-icon left size="small">mdi-login</v-icon>
@@ -71,7 +71,7 @@
     >
       <v-list>
         <template v-if="isAuthenticated">
-          <v-list-item :to="'/'">
+          <v-list-item :to="'/dic'">
             <v-list-item-icon>
               <v-icon size="small">mdi-view-dashboard</v-icon>
             </v-list-item-icon>
@@ -102,7 +102,7 @@
           </v-list-item>
         </template>
         <template v-else>
-          <v-list-item :to="'/login'">
+          <v-list-item :to="'/auth'">
             <v-list-item-icon>
               <v-icon size="small">mdi-login</v-icon>
             </v-list-item-icon>
@@ -132,7 +132,7 @@ const { isAuthenticated, currentUser, logout } = useAuth()
 
 const handleLogout = async () => {
   await logout()
-  router.push('/login')
+  router.push('/auth')
 }
 </script>
 
