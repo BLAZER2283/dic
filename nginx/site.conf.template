@@ -54,16 +54,9 @@ server {
     try_files $uri $uri/ /ucrp/index.html;
   }
 
-  location = /dic {
-    return 301 /dic/;
-  }
-
-  location /dic/ {
-    alias /usr/share/nginx/html/dic/;
-    try_files $uri $uri/ /dic/index.html;
-  }
-
-  location = / {
-    return 302 /dic/;
+  # Serve DIC SPA at root
+  location / {
+    root /usr/share/nginx/html/dic;
+    try_files $uri $uri/ /index.html;
   }
 }

@@ -1,9 +1,9 @@
 from rest_framework import viewsets, status
 from rest_framework.response import Response
-from rest_framework.permissions import Authenticated
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser
 
-from .models import AnalysisTask, 
+from .models import AnalysisTask
 from .serealisers import (
     AnalysisTaskSerializer,
     AnalysisTaskCreateSerializer,
@@ -27,7 +27,7 @@ class AnalysisTaskViewSet(
         'sample', 'parameters', 'images', 'results'
     ).order_by('-created_at')
     parser_classes = (MultiPartParser, FormParser)
-    permission_classes = [Authenticated]
+    permission_classes = [IsAuthenticated]
 
     def get_serializer_class(self):
         if self.action == 'create':

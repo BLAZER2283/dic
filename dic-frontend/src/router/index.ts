@@ -17,6 +17,7 @@ const router = createRouter({
     // Главная страница — выбор модуля
     {
       path: '/',
+      alias: '/module-select',
       name: 'module-select',
       component: ModuleSelectView,
       meta: { title: 'Выбор модуля', requiresAuth: true }
