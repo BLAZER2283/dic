@@ -17,7 +17,9 @@ import AppNavigation from '@/components/AppNavigation.vue'
 import AppFooter from '@/components/AppFooter.vue'
 
 const route = useRoute()
-const showHeaderFooter = computed(() => route.name !== 'module-select')
+const showHeaderFooter = computed(() =>
+  !['module-select', 'login', 'register'].includes(route.name as string)
+)
 </script>
 
 <style>

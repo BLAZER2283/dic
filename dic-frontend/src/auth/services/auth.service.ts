@@ -34,7 +34,7 @@ api.interceptors.request.use(async (config) => {
   const methodsThatNeedCsrf = ['POST', 'PUT', 'PATCH', 'DELETE'];
   if (methodsThatNeedCsrf.includes(config.method?.toUpperCase() || '')) {
     try {
-      const response = await axios.get<CSRFToken>('/api/get-csrf-token/');
+      const response = await axios.get<CSRFToken>('/api/auth/get-csrf-token/');
       const csrfToken = response.data.csrfToken;
 
       if (config.data instanceof FormData) {
@@ -94,7 +94,7 @@ export class AuthService {
    * Получение CSRF токена
    */
   static async getCsrfToken(): Promise<CSRFToken> {
-    const response = await api.get<CSRFToken>('/get-csrf-token/');
+    const response = await api.get<CSRFToken>('/auth/get-csrf-token/');
     return response.data;
   }
 }

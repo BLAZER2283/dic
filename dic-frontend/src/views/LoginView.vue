@@ -2,8 +2,7 @@
   <v-container class="login-container" fluid>
     <div class="login-wrapper">
       <div class="login-header">
-        <h1>DIC Analyzer</h1>
-        <p>Вход в систему</p>
+        <h1>Вход в систему</h1>
       </div>
 
       <div class="login-card">

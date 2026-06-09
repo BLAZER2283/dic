@@ -68,7 +68,7 @@ class ApiService {
 
   // CSRF Token
   async getCSRFToken(): Promise<AxiosResponse<CSRFToken>> {
-    return this.api.get('/get-csrf-token/');
+    return this.api.get('/auth/get-csrf-token/');
   }
 
   // DIC Analysis CRUD operations
@@ -153,12 +153,17 @@ class ApiService {
     try {
       // Use fetch directly for multipart/form-data with CSRF token
       console.log('DEBUG: Sending request with fetch...');
+      const authStore = useAuthStore();
+      const headers: Record<string, string> = {
+        'X-CSRFToken': csrfToken
+      };
+      if (authStore.accessToken) {
+        headers['Authorization'] = `Bearer ${authStore.accessToken}`;
+      }
       const response = await fetch('/api/analyses/', {
         method: 'POST',
         body: formData,
-        headers: {
-          'X-CSRFToken': csrfToken
-        }
+        headers
       });
 
       console.log('DEBUG: Response status:', response.status);
