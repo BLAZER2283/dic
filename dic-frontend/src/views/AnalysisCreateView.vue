@@ -294,7 +294,6 @@ const debugValidation = computed(() => {
   const formValid = form.value?.validate() ?? false
   const hasImages = !!(formData.image_before && formData.image_after)
   const valid = valid.value
-  console.log('DEBUG: Validation state:', { formValid, hasImages, valid })
   return { formValid, hasImages, valid }
 })
 
@@ -392,61 +391,25 @@ const removeImage = (type: 'before' | 'after') => {
 }
 
 const submitForm = async () => {
-  console.log('DEBUG: submitForm called')
-  console.log('DEBUG: formData:', {
-    name: formData.name,
-    image_before: formData.image_before?.name,
-    image_after: formData.image_after?.name,
-    subset_size: formData.subset_size,
-    step: formData.step,
-    max_iter: formData.max_iter,
-    min_correlation: formData.min_correlation,
-    sample_name: formData.sample_name,
-    material: formData.material,
-    manufacture: formData.manufacture,
-    test_date: formData.test_date
-  })
-
-  // Check if form exists
-  console.log('DEBUG: form.value exists:', !!form.value)
   if (!form.value) {
-    console.error('DEBUG: Form ref is null!')
     alert('Error: Form is not initialized')
     return
   }
 
-  // Validate form
-  console.log('DEBUG: Calling form.validate()')
   const isValid = form.value.validate()
-  console.log('DEBUG: Form validation result:', isValid)
-
-  // Check images
-  console.log('DEBUG: image_before exists:', !!formData.image_before)
-  console.log('DEBUG: image_after exists:', !!formData.image_after)
 
   if (!isValid || !formData.image_before || !formData.image_after) {
-    console.log('DEBUG: Form validation failed or missing images - exiting')
-    if (!isValid) {
-      console.log('DEBUG: Form validation errors:', form.value.errors)
-    }
     return
   }
 
-  // Check if images are the same
   if (formData.image_before.name === formData.image_after.name) {
-    console.log('DEBUG: Same image names detected')
     alert('Error: Please select different images for "before" and "after" states.')
     return
   }
 
-  console.log('DEBUG: All validation passed, starting analysis creation')
-  console.log('DEBUG: min_correlation value being sent:', formData.min_correlation)
   creating.value = true
   try {
-    console.log('DEBUG: Calling analysisStore.createAnalysis')
     const analysis = await analysisStore.createAnalysis(formData)
-    console.log('DEBUG: Analysis created successfully:', analysis)
-    console.log('DEBUG: Analysis min_correlation from server:', analysis.min_correlation)
     createdAnalysis.value = analysis
     showSuccessDialog.value = true
 
@@ -458,19 +421,11 @@ const submitForm = async () => {
     afterPreview.value = ''
     form.value?.resetValidation()
   } catch (error) {
-    console.error('DEBUG: Failed to create analysis:', error)
-    // Show error message to user
     const errorMessage = error.response?.data?.detail ||
                         error.response?.data?.error ||
                         error.response?.data ||
                         error.message ||
                         'Failed to create analysis'
-    console.error('DEBUG: Error details:', {
-      response: error.response,
-      status: error.response?.status,
-      data: error.response?.data,
-      message: error.message
-    })
     alert(`Error: ${JSON.stringify(errorMessage)}`)
   } finally {
     creating.value = false

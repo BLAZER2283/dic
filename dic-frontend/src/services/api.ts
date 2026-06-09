@@ -31,14 +31,10 @@ class ApiService {
 
       if (config.method && ['post', 'put', 'patch', 'delete'].includes(config.method.toLowerCase())) {
         try {
-          console.log('DEBUG: Getting CSRF token for request:', config.url);
           const csrfResponse = await this.getCSRFToken();
           const csrfToken = csrfResponse.data.csrfToken;
-          console.log('DEBUG: Got CSRF token:', csrfToken ? csrfToken.substring(0, 20) + '...' : 'null');
 
-          // For multipart/form-data, add CSRF token to FormData
           if (config.headers['Content-Type']?.includes('multipart/form-data') && config.data instanceof FormData) {
-            console.log('DEBUG: Adding CSRF token to FormData');
             config.data.append('csrfmiddlewaretoken', csrfToken);
           } else {
             // For other requests, add to headers
@@ -90,27 +86,10 @@ class ApiService {
   }
 
   async createAnalysis(data: DICAnalysisCreate): Promise<AxiosResponse<DICAnalysis>> {
-    console.log('DEBUG: createAnalysis called with data:', {
-      name: data.name,
-      image_before: data.image_before?.name,
-      image_after: data.image_after?.name,
-      subset_size: data.subset_size,
-      step: data.step,
-      max_iter: data.max_iter,
-      min_correlation: data.min_correlation,
-      sample_name: data.sample_name,
-      material: data.material,
-      manufacture: data.manufacture,
-      test_date: data.test_date
-    });
-
-    // Get CSRF token first
     let csrfToken = '';
     try {
-      console.log('DEBUG: Getting CSRF token for analysis creation');
       const csrfResponse = await this.getCSRFToken();
       csrfToken = csrfResponse.data.csrfToken;
-      console.log('DEBUG: Got CSRF token:', csrfToken ? csrfToken.substring(0, 20) + '...' : 'null');
     } catch (error) {
       console.warn('Failed to get CSRF token:', error);
     }
@@ -134,25 +113,11 @@ class ApiService {
     if (data.manufacture) formData.append('manufacture', data.manufacture);
     if (data.test_date) formData.append('test_date', data.test_date);
 
-    // Add CSRF token to FormData for multipart requests
     if (csrfToken) {
       formData.append('csrfmiddlewaretoken', csrfToken);
-      console.log('DEBUG: Added CSRF token to FormData');
-    }
-
-    // Log FormData contents
-    console.log('DEBUG: FormData contents:');
-    for (let [key, value] of formData.entries()) {
-      if (value instanceof File) {
-        console.log(`${key}: File(${value.name}, ${value.size} bytes, ${value.type})`);
-      } else {
-        console.log(`${key}: ${value}`);
-      }
     }
 
     try {
-      // Use fetch directly for multipart/form-data with CSRF token
-      console.log('DEBUG: Sending request with fetch...');
       const authStore = useAuthStore();
       const headers: Record<string, string> = {
         'X-CSRFToken': csrfToken
@@ -166,19 +131,14 @@ class ApiService {
         headers
       });
 
-      console.log('DEBUG: Response status:', response.status);
-
       if (response.ok) {
         const responseData = await response.json();
-        console.log('DEBUG: createAnalysis success:', responseData);
         return { data: responseData, status: response.status, statusText: response.statusText, headers: response.headers, config: {} } as AxiosResponse<DICAnalysis>;
       } else {
         const errorText = await response.text();
-        console.error('DEBUG: createAnalysis error:', response.status, errorText);
         throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
     } catch (error) {
-      console.error('DEBUG: createAnalysis error:', error);
       throw error;
     }
   }
