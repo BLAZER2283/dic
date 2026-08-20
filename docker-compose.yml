@@ -1,14 +1,17 @@
-version: '3.8'
-
 services:
   nginx:
-    image: nginx:stable
+    # Оба SPA собираются внутри образа (см. Dockerfile.nginx), поэтому
+    # `docker compose up --build` поднимает приложение на чистом клоне —
+    # без предварительной ручной сборки dist/.
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
     ports:
       - "80:80"
     volumes:
+      # site.conf генерируется из site.conf.template через envsubst в
+      # deploy.sh, поэтому остаётся монтированием, а не слоем образа.
       - ./nginx/site.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./dist/ucrp:/usr/share/nginx/html/ucrp:ro
-      - ./dist/dic:/usr/share/nginx/html/dic:ro
       - ./media:/usr/share/nginx/html/media:ro
     depends_on:
       backend:

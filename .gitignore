@@ -120,6 +120,11 @@ staticfiles/
 *.png
 *.bmp
 
+# ...but documentation screenshots are meant to be committed
+!docs/**/*.png
+!docs/**/*.jpg
+!docs/**/*.gif
+
 logs/
 *.log
 
@@ -141,6 +146,9 @@ setup.py
 test*.html
 remote-deploy.log
 
+# Sample datasets are distributed via GitHub Releases, not committed to the repo
+Sample1.zip
+Sample2.zip
 Sample3/
 
 dic-frontend/node_modules/

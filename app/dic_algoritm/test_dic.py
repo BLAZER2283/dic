@@ -1,135 +1,98 @@
 """
-Тест для проверки DIC алгоритма с идентичными изображениями.
+Тесты вычислительного ядра DIC (Digital Image Correlation).
+
+Проверяются два опорных свойства алгоритма, которые не зависят от подбора
+параметров и должны выполняться всегда:
+
+  * идентичные изображения дают нулевое поле смещений (нет ложного сигнала);
+  * искусственно сдвинутое изображение даёт смещение, равное заданному сдвигу.
+
+Второе свойство — это фактически калибровка: если алгоритм не находит
+известный сдвиг, доверять его результатам на реальных образцах нельзя.
 """
 import numpy as np
-import sys
-import os
+import pytest
 
-# Добавляем путь к модулю
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'dic_algoritm'))
+from dic_algoritm.dic_algorithm import DigitalImageCorrelation
 
-from dic_algorithm import DigitalImageCorrelation
+# Алгоритм субпиксельный, поэтому нулевое поле проверяется с допуском на шум.
+ZERO_MEAN_TOLERANCE_PX = 0.05
+ZERO_MAX_TOLERANCE_PX = 0.5
 
-def test_identical_images():
-    """Тест: два идентичных изображения должны показывать нулевые смещения."""
-    print("=" * 60)
-    print("Тест: Идентичные изображения")
-    print("=" * 60)
-    
-    # Создаем тестовое изображение с текстурой
-    np.random.seed(42)
-    img = np.random.rand(200, 200) * 255
-    img = img.astype(np.float32)
-    
-    # Копируем изображение (идентичное)
-    img1 = img.copy()
-    img2 = img.copy()
-    
-    # Инициализируем DIC
-    dic = DigitalImageCorrelation(subset_size=25, step=20, max_iter=35)
-    
-    # Вычисляем смещения
-    U, V, C, x_coords, y_coords, img1_proc, img2_proc = dic.compute_displacement_field(img1, img2)
-    
-    # Постобработка
-    U_filtered, V_filtered = dic.post_process_displacements(U, V, C, min_correlation=0.4)
-    
-    # Статистика
-    magnitude = np.sqrt(U_filtered**2 + V_filtered**2)
-    
-    print(f"\nРазмер изображений: {img1.shape}")
-    print(f"Количество точек анализа: {len(x_coords)} x {len(y_coords)} = {len(x_coords) * len(y_coords)}")
-    print(f"\nСтатистика смещений:")
-    print(f"  Среднее смещение: {np.nanmean(magnitude):.6f} пикселей")
-    print(f"  Максимальное смещение: {np.nanmax(magnitude):.6f} пикселей")
-    print(f"  Медианное смещение: {np.nanmedian(magnitude):.6f} пикселей")
-    print(f"  Стандартное отклонение: {np.nanstd(magnitude):.6f} пикселей")
-    print(f"\nКачество корреляции:")
-    print(f"  Средняя корреляция: {np.mean(C):.6f}")
-    print(f"  Минимальная корреляция: {np.min(C):.6f}")
-    print(f"  Максимальная корреляция: {np.max(C):.6f}")
-    
-    # Проверка
-    mean_disp = np.nanmean(magnitude)
-    max_disp = np.nanmax(magnitude)
-    
-    print("\n" + "=" * 60)
-    if mean_disp < 0.05 and max_disp < 0.5:
-        print("✓ ТЕСТ ПРОЙДЕН: Смещения близки к нулю (как и ожидалось)")
-        print(f"  Среднее < 0.05: {mean_disp:.6f}")
-        print(f"  Максимум < 0.5: {max_disp:.6f}")
-    else:
-        print("✗ ТЕСТ НЕ ПРОЙДЕН: Обнаружены ложные смещения!")
-        print(f"  Среднее (должно быть < 0.05): {mean_disp:.6f}")
-        print(f"  Максимум (должно быть < 0.5): {max_disp:.6f}")
-    print("=" * 60)
-    
-    return mean_disp < 0.05 and max_disp < 0.5
+KNOWN_SHIFT_PX = 2
+SHIFT_TOLERANCE_PX = 0.5
+
+MIN_CORRELATION = 0.4
 
 
-def test_shifted_images():
-    """Тест: изображение с известным смещением должно детектироваться."""
-    print("\n" + "=" * 60)
-    print("Тест: Изображение с известным смещением (2 пикселя вправо)")
-    print("=" * 60)
-    
-    # Создаем тестовое изображение
-    np.random.seed(42)
-    img1 = np.random.rand(200, 200) * 255
-    img1 = img1.astype(np.float32)
-    
-    # Создаем смещенную копию (сдвиг на 2 пикселя вправо)
-    img2 = np.zeros_like(img1)
-    img2[:, 2:] = img1[:, :-2]
-    img2[:, :2] = img1[:, :2]  # Копируем края для избежания пустых зон
-    
-    # Инициализируем DIC
-    dic = DigitalImageCorrelation(subset_size=25, step=20, max_iter=35)
-    
-    # Вычисляем смещения
-    U, V, C, x_coords, y_coords, img1_proc, img2_proc = dic.compute_displacement_field(img1, img2)
-    
-    # Постобработка
-    U_filtered, V_filtered = dic.post_process_displacements(U, V, C, min_correlation=0.4)
-    
-    # Статистика
-    magnitude = np.sqrt(U_filtered**2 + V_filtered**2)
-    
-    print(f"\nРазмер изображений: {img1.shape}")
-    print(f"Количество точек анализа: {len(x_coords)} x {len(y_coords)} = {len(x_coords) * len(y_coords)}")
-    print(f"\nСтатистика смещений:")
-    print(f"  Среднее смещение по X: {np.nanmean(U_filtered):.3f} пикселей (ожидалось ~2.0)")
-    print(f"  Среднее смещение по Y: {np.nanmean(V_filtered):.3f} пикселей (ожидалось ~0.0)")
-    print(f"  Средняя магнитуда: {np.nanmean(magnitude):.3f} пикселей")
-    
-    # Проверка
-    mean_u = np.nanmean(U_filtered)
-    mean_v = np.nanmean(V_filtered)
-    
-    print("\n" + "=" * 60)
-    if 1.5 < mean_u < 2.5 and abs(mean_v) < 0.5:
-        print("✓ ТЕСТ ПРОЙДЕН: Смещение детектировано корректно")
-        print(f"  U ≈ 2.0: {mean_u:.3f}")
-        print(f"  V ≈ 0.0: {mean_v:.3f}")
-    else:
-        print("✗ ТЕСТ НЕ ПРОЙДЕН: Смещение детектировано некорректно!")
-        print(f"  U (должно быть 1.5-2.5): {mean_u:.3f}")
-        print(f"  V (должно быть < 0.5): {mean_v:.3f}")
-    print("=" * 60)
-    
-    return 1.5 < mean_u < 2.5 and abs(mean_v) < 0.5
+@pytest.fixture
+def speckle_image() -> np.ndarray:
+    """Синтетическая спекл-текстура с фиксированным seed — тест детерминирован."""
+    rng = np.random.default_rng(42)
+    return (rng.random((200, 200)) * 255).astype(np.float32)
 
 
-if __name__ == "__main__":
-    print("\nЗапуск тестов DIC алгоритма...\n")
-    
-    test1_passed = test_identical_images()
-    test2_passed = test_shifted_images()
-    
-    print("\n\n" + "=" * 60)
-    print("ИТОГИ:")
-    print(f"  Тест идентичных изображений: {'✓ ПРОЙДЕН' if test1_passed else '✗ НЕ ПРОЙДЕН'}")
-    print(f"  Тест смещенных изображений: {'✓ ПРОЙДЕН' if test2_passed else '✗ НЕ ПРОЙДЕН'}")
-    print("=" * 60)
-    
-    sys.exit(0 if (test1_passed and test2_passed) else 1)
+@pytest.fixture
+def dic() -> DigitalImageCorrelation:
+    return DigitalImageCorrelation(subset_size=25, step=20, max_iter=35)
+
+
+def displacement_field(dic, img1, img2):
+    """Считает поле смещений и возвращает отфильтрованные U, V и матрицу корреляции."""
+    U, V, C, _x, _y, _p1, _p2 = dic.compute_displacement_field(img1, img2)
+    U_filtered, V_filtered = dic.post_process_displacements(
+        U, V, C, min_correlation=MIN_CORRELATION
+    )
+    return U_filtered, V_filtered, C
+
+
+@pytest.mark.slow
+def test_identical_images_give_zero_displacement(dic, speckle_image):
+    """На идентичных изображениях алгоритм не должен выдумывать смещения."""
+    U, V, _ = displacement_field(dic, speckle_image.copy(), speckle_image.copy())
+    magnitude = np.sqrt(U**2 + V**2)
+
+    mean_displacement = np.nanmean(magnitude)
+    max_displacement = np.nanmax(magnitude)
+
+    assert mean_displacement < ZERO_MEAN_TOLERANCE_PX, (
+        f"среднее смещение {mean_displacement:.6f} px "
+        f"превышает допуск {ZERO_MEAN_TOLERANCE_PX} px"
+    )
+    assert max_displacement < ZERO_MAX_TOLERANCE_PX, (
+        f"максимальное смещение {max_displacement:.6f} px "
+        f"превышает допуск {ZERO_MAX_TOLERANCE_PX} px"
+    )
+
+
+@pytest.mark.slow
+def test_identical_images_give_near_perfect_correlation(dic, speckle_image):
+    """ZNCC на одинаковых субобластях должен быть практически равен единице."""
+    _, _, C = displacement_field(dic, speckle_image.copy(), speckle_image.copy())
+
+    mean_correlation = float(np.mean(C))
+    assert mean_correlation > 0.99, (
+        f"средняя корреляция {mean_correlation:.6f} слишком низкая для "
+        f"идентичных изображений"
+    )
+
+
+@pytest.mark.slow
+def test_known_shift_is_measured_correctly(dic, speckle_image):
+    """Сдвиг на 2 px вправо должен измеряться как U ≈ 2, V ≈ 0."""
+    shifted = np.zeros_like(speckle_image)
+    shifted[:, KNOWN_SHIFT_PX:] = speckle_image[:, :-KNOWN_SHIFT_PX]
+    # Левый край дублируем, чтобы в кадре не возникла пустая зона без текстуры.
+    shifted[:, :KNOWN_SHIFT_PX] = speckle_image[:, :KNOWN_SHIFT_PX]
+
+    U, V, _ = displacement_field(dic, speckle_image, shifted)
+
+    measured_u = np.nanmean(U)
+    measured_v = np.nanmean(V)
+
+    assert abs(measured_u - KNOWN_SHIFT_PX) < SHIFT_TOLERANCE_PX, (
+        f"измеренный сдвиг по X {measured_u:.3f} px, ожидался {KNOWN_SHIFT_PX} px"
+    )
+    assert abs(measured_v) < SHIFT_TOLERANCE_PX, (
+        f"паразитный сдвиг по Y {measured_v:.3f} px, ожидался 0"
+    )

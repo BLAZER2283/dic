@@ -1,0 +1,37 @@
+# --- Core framework ---
+Django==5.1.2
+djangorestframework==3.15.2
+djangorestframework-simplejwt==5.3.1
+django-cors-headers==4.6.0
+django-filter==24.3
+drf-spectacular[sidecar]==0.27.2
+
+# --- Database ---
+psycopg2-binary==2.9.10
+dj-database-url==2.3.0
+
+# --- Numerics & image processing (DIC / EPG cores) ---
+numpy==1.26.4
+scipy==1.14.1
+opencv-python-headless==4.10.0.84
+Pillow==11.0.0
+matplotlib==3.9.2
+
+# --- Report generation ---
+reportlab==4.2.5
+
+# --- ASGI / async ---
+asgiref==3.8.1
+channels==4.1.0
+daphne==4.1.2
+aiofiles==24.1.0
+
+# --- Runtime ---
+gunicorn==23.0.0
+whitenoise==6.8.2
+python-dotenv==1.0.1
+
+# --- Tests ---
+pytest==8.3.3
+pytest-django==4.9.0
+pytest-cov==5.0.0

@@ -3,6 +3,7 @@ from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.exceptions import TokenError
 from django.contrib.auth import authenticate
 from django.middleware.csrf import get_token
 
@@ -81,23 +82,26 @@ def logout_view(request):
 
     Принимает refresh токен и добавляет его в blacklist.
     """
-    try:
-        refresh_token = request.data.get('refresh')
-        if not refresh_token:
-            return Response(
-                {'error': 'Refresh токен обязателен'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+    refresh_token = request.data.get('refresh')
+    if not refresh_token:
+        return Response(
+            {'error': 'Refresh токен обязателен'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
+    # Ловим только TokenError: раньше здесь стоял `except Exception`, из-за
+    # которого отсутствие приложения token_blacklist выглядело как невалидный
+    # токен, и сломанный выход возвращал 400 вместо ошибки конфигурации.
+    try:
         token = RefreshToken(refresh_token)
         token.blacklist()
-
-        return Response({'message': 'Успешный выход'})
-    except Exception as e:
+    except TokenError:
         return Response(
             {'error': 'Неверный токен'},
             status=status.HTTP_400_BAD_REQUEST
         )
+
+    return Response({'message': 'Успешный выход'})
 
 
 @api_view(['GET'])

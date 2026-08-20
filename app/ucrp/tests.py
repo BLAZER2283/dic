@@ -1,10 +1,17 @@
 import pytest
 import numpy as np
+from django.contrib.auth import get_user_model
 from django.test import TestCase
 from ucrp.logik.plasma_optimizer import (
     PlasmaOptimizer,
     MATERIAL_CHOICES,
     MATERIAL_PROPERTIES,
+)
+from ucrp.models import (
+    EPGAuxiliaryParameters,
+    EPGCalculation,
+    EPGResults,
+    EPGWarnings,
 )
 
     
@@ -408,67 +415,62 @@ class TestIntegration:
         assert len(opt.optimal_I_by_length) == n
 
 
-# DJANGO MODEL TESTS (если нужны)
+# --------------------------------------------------------------------------
+# Сохранение расчёта и связанных с ним сущностей в БД
+# --------------------------------------------------------------------------
 
 class TestDjangoModels(TestCase):
     """Тесты на сохранение результатов в БД."""
 
-    def test_save_calculation(self):
-        from ucrp.models import EPGCalculation
-
-        calc = EPGCalculation.objects.create(
-            material="ОТ4",
-            diameter=58.0,
-            length=700.0,
-            I_target=1390.0,
-            n_electrode=30000.0,
-            plasma_offset=0.0,
-            plasma_angle=86.0,
-            gas_flow=2.6,
-            pusher_speed=45.0,
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            username="epg-tester", password="SuperSecret123"
         )
+
+    def make_calculation(self, **overrides) -> EPGCalculation:
+        """Расчёт с контрольными параметрами из ТЗ; поля переопределяются по месту."""
+        params = {
+            "user": self.user,
+            "material": "ОТ4",
+            "diameter": 58.0,
+            "length": 700.0,
+            "I_target": 1390.0,
+            "n_electrode": 30000.0,
+            "plasma_offset": 0.0,
+            "plasma_angle": 86.0,
+            "gas_flow": 2.6,
+            "pusher_speed": 45.0,
+        }
+        params.update(overrides)
+        return EPGCalculation.objects.create(**params)
+
+    def test_save_calculation(self):
+        calc = self.make_calculation()
+
         assert calc.id is not None
         assert calc.material == "ОТ4"
+        assert calc.user == self.user
+
+    def test_calculation_is_reachable_from_its_owner(self):
+        """Расчёт должен находиться через обратную связь user.epg_calculations."""
+        calc = self.make_calculation()
+
+        assert list(self.user.epg_calculations.all()) == [calc]
 
     def test_save_auxiliary_params(self):
-        from ucrp.models import EPGCalculation, EPGAuxiliaryParameters
-
-        calc = EPGCalculation.objects.create(
-            material="ОТ4",
-            diameter=58.0,
-            length=700.0,
-            I_target=1390.0,
-            n_electrode=30000.0,
-            plasma_offset=0.0,
-            plasma_angle=86.0,
-            gas_flow=2.6,
-            pusher_speed=45.0,
-        )
         aux = EPGAuxiliaryParameters.objects.create(
-            calculation=calc,
+            calculation=self.make_calculation(),
             vibration_level=2.0,
             n_ogark=26000.0,
             time_from_last_cleaning=0,
             roller_wear_mm=0.0,
         )
+
         assert aux.vibration_level == 2.0
 
     def test_save_results(self):
-        from ucrp.models import EPGCalculation, EPGResults
-
-        calc = EPGCalculation.objects.create(
-            material="ОТ4",
-            diameter=58.0,
-            length=700.0,
-            I_target=1390.0,
-            n_electrode=30000.0,
-            plasma_offset=0.0,
-            plasma_angle=86.0,
-            gas_flow=2.6,
-            pusher_speed=45.0,
-        )
         results = EPGResults.objects.create(
-            calculation=calc,
+            calculation=self.make_calculation(),
             predicted_losses_pct=8.5,
             predicted_grain_size=115.0,
             frac_100_140_pct=90.0,
@@ -477,29 +479,27 @@ class TestDjangoModels(TestCase):
             optimal_n_by_length=[30100, 30000, 29800],
             x_grid=[0, 350, 700],
         )
+
         assert results.predicted_losses_pct == 8.5
         assert results.stability_index == 82.0
 
     def test_save_warnings(self):
-        from ucrp.models import EPGCalculation, EPGWarnings
-
-        calc = EPGCalculation.objects.create(
-            material="ОТ4",
-            diameter=58.0,
-            length=700.0,
-            I_target=1390.0,
-            n_electrode=30000.0,
-            plasma_offset=0.0,
-            plasma_angle=86.0,
-            gas_flow=2.6,
-            pusher_speed=45.0,
-        )
         warnings = EPGWarnings.objects.create(
-            calculation=calc,
+            calculation=self.make_calculation(),
             deposits=False,
             vibration=False,
             cracking=False,
             overheating=False,
         )
+
         assert warnings.deposits is False
         assert warnings.vibration is False
+
+    def test_deleting_user_removes_their_calculations(self):
+        """on_delete=CASCADE: удаление пользователя уносит его расчёты."""
+        self.make_calculation()
+        assert EPGCalculation.objects.count() == 1
+
+        self.user.delete()
+
+        assert EPGCalculation.objects.count() == 0

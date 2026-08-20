@@ -8,7 +8,11 @@ load_dotenv(os.path.join(Path(__file__).resolve().parent.parent.parent, '.env'))
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
+# Production always supplies DJANGO_SECRET_KEY via .env; the fallback exists so
+# that tests and a bare `manage.py` invocation work without a configured .env.
+SECRET_KEY = os.getenv(
+    "DJANGO_SECRET_KEY", "django-insecure-dev-only-do-not-use-in-production"
+)
 
 DEBUG = os.getenv("DJANGO_DEBUG", "True").lower() in ("true", "1", "yes")
 
@@ -23,6 +27,9 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "rest_framework_simplejwt",
+    # Нужен для token.blacklist() в logout: без него RefreshToken не получает
+    # метод blacklist() и выход из системы молча падает.
+    "rest_framework_simplejwt.token_blacklist",
     "corsheaders",
     "dic_api",
     'ucrp',
@@ -179,8 +186,13 @@ USE_X_FORWARDED_HOST = True
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 SPECTACULAR_SETTINGS = {
-    "TITLE": "API вашего проекта",
-    "DESCRIPTION": "Описание вашего проекта",
+    "TITLE": "DIC Analyzer API",
+    "DESCRIPTION": (
+        "REST API системы цифровой корреляции изображений (Digital Image "
+        "Correlation) и оптимизации режимов электронно-плазменной грануляции. "
+        "Управление вычислительными задачами, хранение полей смещений, "
+        "выгрузка отчётов."
+    ),
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
 }

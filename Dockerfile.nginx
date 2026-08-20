@@ -1,0 +1,27 @@
+# nginx, раздающий оба SPA и проксирующий /api/ в Django.
+#
+# Фронтенды собираются здесь же, внутри образа: до этого dist/ собирался
+# только скриптом deploy.sh на хосте, поэтому `docker compose up` на чистом
+# клоне поднимал nginx с пустыми каталогами и приложение не открывалось.
+
+# --- DIC SPA (Vue 3 + Vuetify), отдаётся с корня ---
+FROM node:18-slim AS build-dic
+WORKDIR /src
+COPY dic-frontend/package.json dic-frontend/package-lock.json ./
+RUN npm ci || npm install
+COPY dic-frontend/ ./
+RUN npm run build
+
+# --- UCRP / plasma-optimizer SPA (React), отдаётся с /ucrp/ ---
+FROM node:18-slim AS build-ucrp
+WORKDIR /src
+COPY plasma-optimizer/package.json plasma-optimizer/package-lock.json ./
+RUN npm ci || npm install
+COPY plasma-optimizer/ ./
+RUN npm run build
+
+# --- Итоговый образ ---
+FROM nginx:stable
+COPY --from=build-dic /src/dist/ /usr/share/nginx/html/dic/
+COPY --from=build-ucrp /src/dist/ /usr/share/nginx/html/ucrp/
+EXPOSE 80
