@@ -18,6 +18,9 @@ DB_NAME="dic_db"
 DB_USER="dic_user"
 DB_PASSWORD=""
 COMPOSE_FILE="docker-compose.yml"
+# Заполняется в check_dependencies: "docker compose" (плагин v2) либо
+# "docker-compose" (standalone). Подставляется без кавычек — это два слова.
+COMPOSE=""
 LOG_FILE="${SCRIPT_DIR}/deploy.log"
 
 # Colors for output
@@ -89,7 +92,7 @@ check_dependencies() {
     
     local missing_deps=()
     
-    for cmd in curl git envsubst; do
+    for cmd in curl git envsubst docker; do
         if ! command -v "$cmd" &> /dev/null; then
             missing_deps+=("$cmd")
         fi
@@ -149,25 +152,29 @@ check_dependencies() {
         fi
     fi
     
-    if ! command -v docker-compose &> /dev/null; then
-        if ! docker-compose version &> /dev/null 2>&1; then
-            log_info "Installing docker-compose..."
-            curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-            chmod +x /usr/local/bin/docker-compose
-            log_success "docker-compose installed"
-        fi
+    # Compose вызывается либо как плагин v2 ("docker compose"), либо как
+    # standalone-бинарник. Плагин предпочтительнее: docker-compose v1 не
+    # понимает compose-файл без ключа `version`.
+    if docker compose version &> /dev/null; then
+        COMPOSE="docker compose"
+        log_info "Using compose plugin: $(docker compose version --short 2>/dev/null)"
+    elif command -v docker-compose &> /dev/null; then
+        COMPOSE="docker-compose"
+        log_info "Using standalone docker-compose: $(docker-compose version --short 2>/dev/null)"
+    else
+        log_info "Installing standalone docker compose..."
+        # Ассеты Compose v2 называются строчными (docker-compose-linux-x86_64),
+        # поэтому uname -s здесь не подходит. -f, чтобы 404 падал, а не
+        # записывался HTML-страницей в исполняемый файл.
+        sudo curl -fL \
+            "https://github.com/docker/compose/releases/latest/download/docker-compose-linux-$(uname -m)" \
+            -o /usr/local/bin/docker-compose
+        sudo chmod +x /usr/local/bin/docker-compose
+        COMPOSE="docker-compose"
+        log_success "docker compose installed"
     fi
     
-    if command -v docker-compose &> /dev/null; then
-        log_info "Creating docker-compose alias (v2 style)..."
-        if [ -f /etc/bash.bashrc ]; then
-            echo "alias docker-compose='docker-compose'" >> /etc/bash.bashrc
-        fi
-        if [ -f /etc/profile.d ]; then
-            echo "alias docker-compose='docker-compose'" > /etc/profile.d/docker-compose-alias.sh
-            chmod +x /etc/profile.d/docker-compose-alias.sh
-        fi
-    fi
+    # (раньше здесь создавался alias docker-compose='docker-compose' — no-op)
     
     if command -v docker &> /dev/null; then
         if ! docker info &> /dev/null; then
@@ -215,56 +222,6 @@ clone_or_update_repo() {
     log_success "Repository ready"
 }
 
-install_nodejs() {
-    if ! command -v node &> /dev/null; then
-        log_info "Installing Node.js..."
-        if command -v apt-get &> /dev/null; then
-            curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-            sudo apt-get install -y nodejs
-        elif command -v yum &> /dev/null; then
-            curl -fsSL https://rpm.nodesource.com/setup_18.x | sudo bash -
-            sudo yum install -y nodejs
-        fi
-        log_success "Node.js installed"
-    fi
-}
-
-build_frontends() {
-    log_info "Building frontends..."
-    
-    cd "$PROJECT_DIR"
-    
-    install_nodejs
-    
-    rm -rf dist 2>/dev/null || sudo rm -rf dist
-    mkdir -p dist/dic dist/ucrp
-    chmod 777 dist
-    
-    if [ -d "dic-frontend" ]; then
-        log_info "Building dic-frontend..."
-        cd dic-frontend
-        npm install
-        npm run build
-        cd ..
-        if [ -d "dic-frontend/dist" ]; then
-            cp -r dic-frontend/dist/* dist/dic/
-        fi
-    fi
-    
-    if [ -d "plasma-optimizer" ]; then
-        log_info "Building plasma-optimizer..."
-        cd plasma-optimizer
-        npm install
-        npm run build
-        cd ..
-        if [ -d "plasma-optimizer/dist" ]; then
-            cp -r plasma-optimizer/dist/* dist/ucrp/
-        fi
-    fi
-    
-    log_success "Frontends built and copied to dist"
-}
-
 stop_containers() {
     log_info "Stopping existing containers..."
     
@@ -272,15 +229,15 @@ stop_containers() {
     
     if [ -f "$COMPOSE_FILE" ]; then
         # Check if containers are running
-        if docker-compose -f "$COMPOSE_FILE" ps &> /dev/null; then
+        if $COMPOSE -f "$COMPOSE_FILE" ps &> /dev/null; then
             log_info "Stopping containers..."
-            docker-compose -f "$COMPOSE_FILE" down 2>/dev/null || true
+            $COMPOSE -f "$COMPOSE_FILE" down 2>/dev/null || true
             
             # Wait for containers to stop
             local max_attempts=30
             local attempt=0
             while [ $attempt -lt $max_attempts ]; do
-                if ! docker-compose -f "$COMPOSE_FILE" ps &> /dev/null; then
+                if ! $COMPOSE -f "$COMPOSE_FILE" ps &> /dev/null; then
                     break
                 fi
                 sleep 1
@@ -346,8 +303,8 @@ EOF
     fi
     
     # Build and start containers
-    docker-compose -f "$COMPOSE_FILE" build --no-cache
-    docker-compose -f "$COMPOSE_FILE" up -d
+    $COMPOSE -f "$COMPOSE_FILE" build --no-cache
+    $COMPOSE -f "$COMPOSE_FILE" up -d
     
     log_success "Containers started"
 }
@@ -374,7 +331,7 @@ healthcheck() {
     # Wait for DB
     attempt=0
     while [ $attempt -lt $max_attempts ]; do
-        if docker-compose -f "$COMPOSE_FILE" exec -T db pg_isready -U "$DB_USER" &>/dev/null 2>&1; then
+        if $COMPOSE -f "$COMPOSE_FILE" exec -T db pg_isready -U "$DB_USER" &>/dev/null 2>&1; then
             log_success "Postgres is ready"
             break
         fi
@@ -456,9 +413,9 @@ main() {
     check_dependencies
     create_project_dir
     clone_or_update_repo
-    build_frontends
     stop_containers
     start_containers
+    healthcheck
     
     log_success "========================================="
     log_success "Deployment completed successfully!"
