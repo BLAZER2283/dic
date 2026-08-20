@@ -73,25 +73,40 @@ TEMPLATES = [
 WSGI_APPLICATION = "app.wsgi.application"
 ASGI_APPLICATION = "app.asgi.application"
 
-CORS_ALLOWED_ORIGINS = [
+# Origin'ы для CORS и CSRF выводятся из ALLOWED_HOSTS, а не перечисляются
+# списком: deploy.sh подставляет туда адрес сервера (--server-host), поэтому
+# переезд на другой хост не требует правок в коде.
+LOCAL_DEV_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:5173",
+    "http://localhost:8080",
     "http://127.0.0.1:3000",
     "http://127.0.0.1:5173",
-    "http://80.78.253.70",
-    "http://80.78.253.70:80",
+    "http://127.0.0.1:8080",
 ]
+
+# Служебные имена внутри docker-сети и wildcard в origin'ы не превращаются.
+INTERNAL_HOSTS = {"", "*", "localhost", "127.0.0.1", "backend", "nginx", "db"}
+
+
+def build_external_origins(hosts):
+    """Собирает http/https-origin'ы для внешних хостов из ALLOWED_HOSTS."""
+    origins = []
+    for host in hosts:
+        host = host.strip()
+        if host in INTERNAL_HOSTS:
+            continue
+        origins += [f"http://{host}", f"http://{host}:80", f"https://{host}"]
+    return origins
+
+
+EXTERNAL_ORIGINS = build_external_origins(ALLOWED_HOSTS)
+
+CORS_ALLOWED_ORIGINS = LOCAL_DEV_ORIGINS + EXTERNAL_ORIGINS
 
 CORS_ALLOW_CREDENTIALS = True
 
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "http://localhost:8080",
-    "http://127.0.0.1:8080",
-    "http://80.78.253.70",
-    "http://80.78.253.70:80",
-]
+CSRF_TRUSTED_ORIGINS = LOCAL_DEV_ORIGINS + EXTERNAL_ORIGINS
 
 CORS_ALLOW_METHODS = ["DELETE", "GET", "OPTIONS", "PATCH", "POST", "PUT"]
 
